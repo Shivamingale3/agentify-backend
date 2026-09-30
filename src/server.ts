@@ -6,7 +6,9 @@ import { logger } from './utils/logger.js';
 async function startServer(): Promise<void> {
   try {
     // Database Health Check
-    await db.connect();
+    // connect() only builds the lazy pool; acquiring a connection actually hits the DB
+    const conn = await (await db.connect()).connection();
+    await conn.release();
     logger.info('Database connection established successfully.');
 
     // Start Express Server
