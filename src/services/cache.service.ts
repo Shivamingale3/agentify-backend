@@ -54,6 +54,11 @@ class CacheService {
   public async flush(): Promise<void> {
     return this.provider.flush();
   }
+
+  /** Graceful shutdown — call on SIGTERM / SIGINT. */
+  public async shutdown(): Promise<void> {
+    return this.provider.close();
+  }
 }
 
 // Default instance wired to the Redis provider.

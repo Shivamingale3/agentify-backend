@@ -23,6 +23,11 @@ class MailService {
       throw error;
     }
   }
+
+  /** Graceful shutdown — call on SIGTERM / SIGINT. */
+  shutdown(): void {
+    this.emailer.close();
+  }
 }
 const mailService = new MailService(nodeMailerProvider);
 export default mailService;

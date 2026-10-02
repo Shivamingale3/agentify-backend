@@ -11,4 +11,5 @@ export interface MailProvider {
     text: string;
     html?: string;
   }): Promise<void>;
+  close(): void;
 }

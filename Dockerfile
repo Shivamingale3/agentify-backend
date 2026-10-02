@@ -9,21 +9,22 @@ COPY package*.json ./
 RUN npm ci
 
 # Compile TypeScript (contract.json/.d.ts are committed, so no emit step needed)
-COPY tsconfig.json prisma.config.ts ./
+COPY tsconfig.json ./
 COPY src ./src
 RUN npx tsc
 
 # ---- runtime ----
+# Migrations are run manually against the DB, so the runtime image only needs
+# production dependencies and the compiled app.
 FROM node:24-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 
-COPY --from=builder /app/node_modules ./node_modules
+COPY package*.json ./
+RUN npm ci --omit=dev && npm cache clean --force
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/package.json /app/prisma.config.ts ./
-# prisma.config.ts points at the contract source, so the CLI needs src/prisma
-COPY --from=builder /app/src/prisma ./src/prisma
-COPY migrations ./migrations
 
+USER node
 EXPOSE 5000
-CMD ["sh", "-c", "npx prisma db migrate --no-interactive && node dist/server.js"]
+# Exec form: node is PID 1 and receives SIGTERM directly, so graceful shutdown runs.
+CMD ["node", "dist/server.js"]

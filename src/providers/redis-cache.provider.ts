@@ -69,6 +69,12 @@ class RedisCacheProvider implements CacheProvider {
       logger.error(`❌ Redis Flush Failed`, error);
     }
   }
+
+  public async close(): Promise<void> {
+    // close() waits for pending commands; destroy() would reject them.
+    await this.cacheInstance.close();
+    logger.info('🛑 Redis Cache connection closed');
+  }
 }
 const cacheProvider = new RedisCacheProvider();
 export default cacheProvider;

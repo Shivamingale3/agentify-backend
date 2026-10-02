@@ -14,6 +14,11 @@ class NodeMailerProvider implements MailProvider {
         pass: env.EMAIL_PASSWORD,
       },
       secure: false,
+      // Never fall back to plaintext: STARTTLS must succeed on 587.
+      requireTLS: true,
+      // Reuse SMTP connections instead of a new TCP+TLS handshake per email.
+      pool: true,
+      maxConnections: 3,
     });
   }
 
@@ -58,6 +63,12 @@ class NodeMailerProvider implements MailProvider {
       logger.error(`Failed to send Email:`, error);
       throw error;
     }
+  }
+
+  close(): void {
+    // Closes the pooled SMTP connections.
+    this.transporter.close();
+    logger.info('🛑 SMTP connections closed');
   }
 }
 
