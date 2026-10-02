@@ -8,6 +8,11 @@ export const envSchema = z.object({
     })
     .nonoptional(),
   DATABASE_URL: z.string().nonoptional(),
+  EMAIL_HOST: z.string().nonoptional('EMAIL_HOST is required'),
+  EMAIL_PORT: z.coerce.number().nonoptional('EMAIL_PORT is required'),
+  EMAIL_FROM: z.string().nonoptional('EMAIL_FROM is required'),
+  EMAIL_USER: z.string().nonoptional('EMAIL_USER is required'),
+  EMAIL_PASSWORD: z.string().nonoptional('EMAIL_PASSWORD is required'),
 });
 // .superRefine((val, ctx) => {
 //   if (val.AI_PROVIDER === 'groq' && !val.GROQ_API_KEY) {

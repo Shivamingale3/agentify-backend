@@ -1,10 +1,12 @@
 import postgres from '@prisma/orm-postgres/runtime';
-import { env } from './env.config.js';
-import type { Contract } from '../prisma/contract.d.ts';
+import { env } from './env.provider.js';
+import type { Contract } from '../prisma/contract.js';
 import contractJson from '../prisma/contract.json' with { type: 'json' };
 
-export const db = postgres<Contract>({
+export const dbInstance = postgres<Contract>({
   contractJson,
   url: env.DATABASE_URL,
   poolOptions: { connectionTimeoutMillis: 2000 },
 });
+
+export const db = dbInstance.orm;
