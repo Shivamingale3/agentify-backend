@@ -8,6 +8,9 @@ class MailService {
     this.emailer = emailer;
   }
 
+  async checkConnection(): Promise<void> {
+    await this.emailer.testConnection();
+  }
   async sendActivationMail(): Promise<void> {
     try {
       await this.emailer.testConnection();

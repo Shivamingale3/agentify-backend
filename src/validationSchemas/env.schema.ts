@@ -13,6 +13,10 @@ export const envSchema = z.object({
   EMAIL_FROM: z.string().nonoptional('EMAIL_FROM is required'),
   EMAIL_USER: z.string().nonoptional('EMAIL_USER is required'),
   EMAIL_PASSWORD: z.string().nonoptional('EMAIL_PASSWORD is required'),
+  CACHE_URL: z.string().nonoptional('CACHE_URL is required'),
+  CACHE_PASS: z.string().nonoptional('CACHE_PASS is required'),
+  QUEUE_URL: z.string().nonoptional('QUEUE_URL is required'),
+  QUEUE_PASS: z.string().nonoptional('QUEUE_PASS is required'),
 });
 // .superRefine((val, ctx) => {
 //   if (val.AI_PROVIDER === 'groq' && !val.GROQ_API_KEY) {
