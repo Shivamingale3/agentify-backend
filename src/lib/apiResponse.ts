@@ -1,4 +1,4 @@
-import type { IApiResponse } from '../interfaces/api.interfaces.js';
+import type { IApiResponse } from '#interfaces/api.interfaces.js';
 
 export class ApiResponse<T> implements IApiResponse<T> {
   constructor(

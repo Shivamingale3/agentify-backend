@@ -1,6 +1,6 @@
-import type { MailProvider } from '../interfaces/mail.interfaces.js';
-import nodeMailerProvider from '../providers/mail.provider.js';
-import { logger } from '../utils/logger.js';
+import type { MailProvider } from '#interfaces/mail.interfaces.js';
+import nodeMailerProvider from '#providers/mail.provider.js';
+import { logger } from '#utils/logger.js';
 
 class MailService {
   private emailer: MailProvider;

@@ -1,8 +1,8 @@
 import type { ZodType } from 'zod';
-import type { CacheProvider } from '../interfaces/cache.interface';
-import { safeParseCached } from '../utils/zodValidator';
-import { logger } from '../utils/logger';
-import cacheProvider from '../providers/cache.provider';
+import type { CacheProvider } from '#interfaces/cache.interface.js';
+import { safeParseCached } from '#utils/zodValidator.js';
+import { logger } from '#utils/logger.js';
+import cacheProvider from '#providers/redis-cache.provider.js';
 
 /**
  * CacheService owns serialization (JSON) and validation (Zod).

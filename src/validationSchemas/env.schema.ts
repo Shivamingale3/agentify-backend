@@ -15,7 +15,8 @@ export const envSchema = z.object({
   EMAIL_PASSWORD: z.string().nonoptional('EMAIL_PASSWORD is required'),
   CACHE_URL: z.string().nonoptional('CACHE_URL is required'),
   CACHE_PASS: z.string().nonoptional('CACHE_PASS is required'),
-  QUEUE_URL: z.string().nonoptional('QUEUE_URL is required'),
+  QUEUE_HOST: z.string().nonoptional('QUEUE_HOST is required'),
+  QUEUE_PORT: z.coerce.number().nonoptional('QUEUE_PORT is required'),
   QUEUE_PASS: z.string().nonoptional('QUEUE_PASS is required'),
 });
 // .superRefine((val, ctx) => {

@@ -63,6 +63,17 @@ export default tseslint.config(
           fixStyle: 'inline-type-imports',
         },
       ],
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              regex: '^\\.{1,2}/',
+              message: 'Use the #* alias instead (e.g. #utils/logger.js).',
+            },
+          ],
+        },
+      ],
 
       // --- Style ---
       '@typescript-eslint/consistent-type-definitions': ['error', 'interface'],

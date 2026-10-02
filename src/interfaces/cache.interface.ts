@@ -5,5 +5,3 @@ export interface CacheProvider {
   del: (key: string) => Promise<void>;
   flush: () => Promise<void>;
 }
-
-

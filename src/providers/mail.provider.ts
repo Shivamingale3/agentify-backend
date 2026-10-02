@@ -1,7 +1,7 @@
 import nodemailer, { type Transporter } from 'nodemailer';
-import { env } from './env.provider';
-import { logger } from '../utils/logger';
-import type { MailProvider } from '../interfaces/mail.interfaces';
+import { env } from '#providers/env.provider.js';
+import { logger } from '#utils/logger.js';
+import type { MailProvider } from '#interfaces/mail.interfaces.js';
 
 class NodeMailerProvider implements MailProvider {
   private transporter: Transporter;

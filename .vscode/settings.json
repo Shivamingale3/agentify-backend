@@ -15,7 +15,9 @@
   "files.insertFinalNewline": true,
 
   // TypeScript settings
-  "typescript.preferences.importModuleSpecifier": "relative",
+  // Auto-imports use the #* aliases from package.json "imports" (e.g. #utils/logger.js)
+  "typescript.preferences.importModuleSpecifier": "non-relative",
+  "typescript.preferences.importModuleSpecifierEnding": "js",
   "typescript.tsdk": "node_modules/typescript/lib",
 
   // ESLint settings

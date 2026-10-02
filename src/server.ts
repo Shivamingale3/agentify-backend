@@ -1,9 +1,9 @@
-import { app } from './app.js';
-import { dbInstance } from './providers/db.provider.js';
-import { env } from './providers/env.provider.js';
-import cacheService from './services/cache.service.js';
-import mailService from './services/mail.service.js';
-import { logger } from './utils/logger.js';
+import { app } from '#app.js';
+import { dbInstance } from '#providers/db.provider.js';
+import { env } from '#providers/env.provider.js';
+import cacheService from '#services/cache.service.js';
+import mailService from '#services/mail.service.js';
+import { logger } from '#utils/logger.js';
 
 async function startServer(): Promise<void> {
   try {

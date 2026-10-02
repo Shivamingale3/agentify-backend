@@ -3,8 +3,8 @@ import {
   RATE_LIMIT_DEFAULT_MESSAGE,
   RATE_LIMITS,
   type RateLimitKey,
-} from '../constants/ratelimits.constants.js';
-import { logger } from '../utils/logger.js';
+} from '#constants/ratelimits.constants.js';
+import { logger } from '#utils/logger.js';
 
 export function createRateLimiter(configKey: RateLimitKey): RateLimitRequestHandler {
   const config = RATE_LIMITS[configKey];

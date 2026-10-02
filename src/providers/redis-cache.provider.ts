@@ -1,7 +1,7 @@
 import { createClient, type RedisClientType } from 'redis';
-import { env } from './env.provider';
-import { logger } from '../utils/logger';
-import type { CacheProvider } from '../interfaces/cache.interface';
+import { env } from '#providers/env.provider.js';
+import { logger } from '#utils/logger.js';
+import type { CacheProvider } from '#interfaces/cache.interface.js';
 
 class RedisCacheProvider implements CacheProvider {
   private cacheInstance: RedisClientType;
@@ -10,6 +10,14 @@ class RedisCacheProvider implements CacheProvider {
     this.cacheInstance = createClient({
       url: env.CACHE_URL,
       password: env.CACHE_PASS,
+      // While Redis is down, fail commands immediately (→ cache miss) instead of
+      // queueing them and hanging the request until Redis comes back.
+      disableOfflineQueue: true,
+    });
+
+    // node-redis crashes the process on an unhandled 'error' event (e.g. Redis restart).
+    this.cacheInstance.on('error', (error: Error) => {
+      logger.error(`❌ Redis Cache error: ${error.message}`);
     });
   }
 
@@ -18,11 +26,10 @@ class RedisCacheProvider implements CacheProvider {
       await this.cacheInstance.connect();
       logger.info('✅ Redis Connection Successsful');
     } catch (error) {
-      if (error instanceof Error) {
-        logger.error(`❌ Redis Connection Failed : ${error.message}`);
-      }
-      logger.error(`❌ Redis Connection Failed`, error);
-      process.exit(1);
+      logger.error(
+        `❌ Redis Connection Failed : ${error instanceof Error ? error.message : String(error)}`,
+      );
+      throw error;
     }
   }
 

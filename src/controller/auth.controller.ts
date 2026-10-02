@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from 'express';
-import type { RegisterDto } from '../types/auth.types';
-import { ApiResponse } from '../lib/apiResponse';
+import type { RegisterDto } from '#types/auth.types.js';
+import { ApiResponse } from '#lib/apiResponse.js';
 
 class AuthController {
   public register(request: Request, response: Response, next: NextFunction): void {

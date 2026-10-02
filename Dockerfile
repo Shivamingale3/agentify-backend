@@ -21,8 +21,8 @@ ENV NODE_ENV=production
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package.json /app/prisma.config.ts ./
-# prisma.config.ts imports src/config/env.config.ts, so the CLI needs the sources
-COPY --from=builder /app/src ./src
+# prisma.config.ts points at the contract source, so the CLI needs src/prisma
+COPY --from=builder /app/src/prisma ./src/prisma
 COPY migrations ./migrations
 
 EXPOSE 5000

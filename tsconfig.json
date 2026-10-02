@@ -1,8 +1,10 @@
 {
   "compilerOptions": {
     "target": "ES2023",
-    "module": "preserve",
-    "moduleResolution": "bundler",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    // "development" resolves #* imports to ./src (see package.json "imports"); runtime uses ./dist
+    "customConditions": ["development"],
     "rootDir": "./src",
     "outDir": "./dist",
 

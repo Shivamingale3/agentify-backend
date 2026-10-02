@@ -1,5 +1,5 @@
 import { z, type ZodType } from 'zod';
-import { logger } from './logger';
+import { logger } from '#utils/logger.js';
 
 /**
  * Parses a JSON string and validates it against the provided Zod schema.
