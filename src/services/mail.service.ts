@@ -1,4 +1,4 @@
-import type { MailProvider } from '#interfaces/mail.interfaces.js';
+import type { MailMessage, MailProvider } from '#interfaces/mail.interfaces.js';
 import nodeMailerProvider from '#providers/mail.provider.js';
 import { logger } from '#utils/logger.js';
 
@@ -10,6 +10,10 @@ class MailService {
 
   async checkConnection(): Promise<void> {
     await this.emailer.testConnection();
+  }
+
+  async sendMail(message: MailMessage): Promise<void> {
+    await this.emailer.sendMail(message);
   }
   async sendActivationMail(): Promise<void> {
     try {

@@ -26,39 +26,46 @@ const DEFAULT_CONCURRENCY = 5;
  * - Two Redis connections:
  *   - producer: fails fast (maxRetriesPerRequest: 1) so a Redis outage
  *     surfaces as an error instead of hanging the HTTP request
- *   - worker: maxRetriesPerRequest: null, required by BullMQ for blocking reads
+ *   - worker: maxRetriesPerRequest: null, required by BullMQ for blocking reads.
+ *     Created on the first `registerWorker`, so API processes (which only enqueue) never open it.
  * - A map of named Queue instances (lazy-created on first `addJob`)
  * - A list of Worker instances (created via `registerWorker`)
  */
 class BullMQProvider implements MQProvider {
+  private readonly redisOptions = {
+    host: env.QUEUE_HOST,
+    port: env.QUEUE_PORT,
+    password: env.QUEUE_PASS,
+  };
   private producerConnection: Redis;
-  private workerConnection: Redis;
+  private workerConnection: Redis | undefined;
   // eslint-disable-next-line @typescript-eslint/consistent-generic-constructors
   private queues: Map<string, Queue> = new Map();
   private workers: Worker[] = [];
 
   constructor() {
-    const options = {
-      host: env.QUEUE_HOST,
-      port: env.QUEUE_PORT,
-      password: env.QUEUE_PASS,
-    };
-    this.producerConnection = new Redis({ ...options, maxRetriesPerRequest: 1 });
-    this.workerConnection = new Redis({ ...options, maxRetriesPerRequest: null });
+    this.producerConnection = new Redis({ ...this.redisOptions, maxRetriesPerRequest: 1 });
 
     // Without an 'error' listener every reconnect failure is reported as unhandled.
     this.producerConnection.on('error', (error) => {
       logger.error(`❌ Queue producer connection error: ${error.message}`);
     });
-    this.workerConnection.on('error', (error) => {
-      logger.error(`❌ Queue worker connection error: ${error.message}`);
-    });
+  }
+
+  private getWorkerConnection(): Redis {
+    if (!this.workerConnection) {
+      this.workerConnection = new Redis({ ...this.redisOptions, maxRetriesPerRequest: null });
+      this.workerConnection.on('error', (error) => {
+        logger.error(`❌ Queue worker connection error: ${error.message}`);
+      });
+    }
+    return this.workerConnection;
   }
 
   async connect(): Promise<void> {
     try {
-      // IORedis connects lazily; ping to verify both connections are alive.
-      await Promise.all([this.producerConnection.ping(), this.workerConnection.ping()]);
+      // IORedis connects lazily; ping to verify the queue Redis is reachable.
+      await this.producerConnection.ping();
       logger.info('✅ Queue (BullMQ) Connection Successful');
     } catch (error) {
       logger.error(
@@ -118,7 +125,7 @@ class BullMQProvider implements MQProvider {
         await handler(job);
       },
       {
-        connection: this.workerConnection,
+        connection: this.getWorkerConnection(),
         concurrency: options?.concurrency ?? DEFAULT_CONCURRENCY,
       },
     );
@@ -144,7 +151,7 @@ class BullMQProvider implements MQProvider {
     await Promise.all(this.workers.map((w) => w.close()));
     await Promise.all(Array.from(this.queues.values()).map((q) => q.close()));
     // quit() waits for pending replies; disconnect() would drop them.
-    await Promise.all([this.producerConnection.quit(), this.workerConnection.quit()]);
+    await Promise.all([this.producerConnection.quit(), this.workerConnection?.quit()]);
     logger.info('🛑 Queue (BullMQ) connections closed');
   }
 }

@@ -5,6 +5,7 @@ import type {
   WorkerOptions,
 } from '#interfaces/queue.interface.js';
 import bullmqProvider from '#providers/bullmq.provider.js';
+import type { JobPayload } from '#types/jobs.types.js';
 import { logger } from '#utils/logger.js';
 
 /**
@@ -21,9 +22,8 @@ import { logger } from '#utils/logger.js';
 
 /** Centralised queue names — add new ones here as the app grows. */
 export const QUEUES = {
-  EMAIL: 'email',
-  // NOTIFICATION: 'notification',
-  // AI_TASK: 'ai-task',
+  /** Shared queue for all job types; workers route each job by its `type`. */
+  JOBS: 'jobs',
 } as const;
 
 /** Only names declared in QUEUES are accepted, so a typo fails to compile. */
@@ -54,6 +54,13 @@ class QueueService {
     const jobId = await this.provider.addJob(queueName, jobName, data, options);
     logger.info(`📥 Enqueued job "${jobName}" on "${queueName}" [${jobId}]`);
     return jobId;
+  }
+
+  // ─── Typed helpers ─────────────────────────────────────────────
+
+  /** Enqueue a job on the shared jobs queue, e.g. `enqueueJob({ type: 'email', data: {...} })`. */
+  async enqueueJob(payload: JobPayload, options?: JobOptions): Promise<string> {
+    return this.enqueue(QUEUES.JOBS, payload.type, payload, options);
   }
 
   /** Register a worker for a queue. Call once at startup. */

@@ -5,8 +5,10 @@
   "main": "index.js",
   "scripts": {
     "dev": "tsx watch --conditions=development src/server.ts",
+    "dev:worker": "tsx watch --conditions=development src/worker.ts",
     "build": "npm run check && tsc",
     "start": "node dist/server.js",
+    "start:worker": "node dist/worker.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier . --write",

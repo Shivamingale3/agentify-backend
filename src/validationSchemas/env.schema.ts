@@ -1,23 +1,44 @@
 import z from 'zod';
 
+// Missing and empty ("KEY=") are both treated as absent.
+const requiredString = (name: string): z.ZodString =>
+  z.string({ error: `${name} is required` }).min(1, `${name} is required`);
+
+const requiredPort = (name: string): z.ZodCoercedNumber =>
+  z.coerce
+    .number({ error: `${name} must be a number` })
+    .int(`${name} must be an integer`)
+    .positive(`${name} is required`);
+
 export const envSchema = z.object({
-  APP_PORT: z.coerce.number().default(5000).nonoptional(),
-  APP_ENV: z
-    .enum(['development', 'test', 'production'], {
-      error: 'App enviroment can be development , test or production',
-    })
-    .nonoptional(),
-  DATABASE_URL: z.string().nonoptional(),
-  EMAIL_HOST: z.string().nonoptional('EMAIL_HOST is required'),
-  EMAIL_PORT: z.coerce.number().nonoptional('EMAIL_PORT is required'),
-  EMAIL_FROM: z.string().nonoptional('EMAIL_FROM is required'),
-  EMAIL_USER: z.string().nonoptional('EMAIL_USER is required'),
-  EMAIL_PASSWORD: z.string().nonoptional('EMAIL_PASSWORD is required'),
-  CACHE_URL: z.string().nonoptional('CACHE_URL is required'),
-  CACHE_PASS: z.string().nonoptional('CACHE_PASS is required'),
-  QUEUE_HOST: z.string().nonoptional('QUEUE_HOST is required'),
-  QUEUE_PORT: z.coerce.number().nonoptional('QUEUE_PORT is required'),
-  QUEUE_PASS: z.string().nonoptional('QUEUE_PASS is required'),
+  APP_PORT: requiredPort('APP_PORT').default(5000),
+  APP_ENV: z.enum(['development', 'test', 'production'], {
+    error: 'APP_ENV is required and must be development, test or production',
+  }),
+  // Comma separated, e.g. "http://localhost:3000,https://app.example.com".
+  // Normalised to bare origins so "https://app.example.com/" still matches the Origin header.
+  ALLOWED_ORIGINS: requiredString('ALLOWED_ORIGINS')
+    .transform((value) =>
+      value
+        .split(',')
+        .map((origin) => origin.trim())
+        .filter(Boolean),
+    )
+    .pipe(z.array(z.url('ALLOWED_ORIGINS must be a comma separated list of URLs')).min(1))
+    .transform((origins) => origins.map((origin) => new URL(origin).origin)),
+  DATABASE_URL: requiredString('DATABASE_URL'),
+  EMAIL_HOST: requiredString('EMAIL_HOST'),
+  EMAIL_PORT: requiredPort('EMAIL_PORT'),
+  EMAIL_FROM: requiredString('EMAIL_FROM'),
+  EMAIL_USER: requiredString('EMAIL_USER'),
+  EMAIL_PASSWORD: requiredString('EMAIL_PASSWORD'),
+  CACHE_URL: requiredString('CACHE_URL'),
+  CACHE_PASS: requiredString('CACHE_PASS'),
+  QUEUE_HOST: requiredString('QUEUE_HOST'),
+  QUEUE_PORT: requiredPort('QUEUE_PORT'),
+  QUEUE_PASS: requiredString('QUEUE_PASS'),
+  // Jobs each worker process runs in parallel. Spawn more processes to scale out.
+  WORKER_CONCURRENCY: requiredPort('WORKER_CONCURRENCY').default(5),
 });
 // .superRefine((val, ctx) => {
 //   if (val.AI_PROVIDER === 'groq' && !val.GROQ_API_KEY) {

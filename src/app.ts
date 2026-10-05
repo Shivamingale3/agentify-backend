@@ -6,6 +6,7 @@ import morgan from 'morgan';
 import { errorHandler } from '#middlewares/error.middleware.js';
 import { globalRateLimiter } from '#middlewares/rateLimiting.middleware.js';
 import { notFoundHandler } from '#middlewares/notFound.middleware.js';
+import { env } from '#providers/env.provider.js';
 import { router } from '#routes/index.routes.js';
 import { morganStream } from '#utils/logger.js';
 
@@ -18,7 +19,8 @@ export const app = express();
 app.set('trust proxy', 1);
 
 app.use(helmet());
-app.use(cors());
+// Only listed origins get CORS headers; cookies allowed for auth.
+app.use(cors({ origin: env.ALLOWED_ORIGINS, credentials: true }));
 
 app.use(globalRateLimiter);
 
