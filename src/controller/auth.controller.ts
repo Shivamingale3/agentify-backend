@@ -1,12 +1,14 @@
 import type { NextFunction, Request, Response } from 'express';
 import type { RegisterDto } from '#types/auth.types.js';
 import { ApiResponse } from '#lib/apiResponse.js';
+import authService from '#services/auth.service.js';
 
 class AuthController {
-  public register(request: Request, response: Response, next: NextFunction): void {
+  public async register(request: Request, response: Response, next: NextFunction): Promise<void> {
     try {
-      const data = request.body as RegisterDto;
-      response.json(ApiResponse.success('Registered successfully', data));
+      const payload = request.body as RegisterDto;
+      await authService.register(payload);
+      response.json(ApiResponse.success('Registered successfully', null));
     } catch (error) {
       next(error);
     }

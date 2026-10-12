@@ -15,6 +15,8 @@ export const envSchema = z.object({
   APP_ENV: z.enum(['development', 'test', 'production'], {
     error: 'APP_ENV is required and must be development, test or production',
   }),
+  APP_URL: requiredString('APP_URL'),
+  FRONTEND_URL: requiredString('FRONTEND_URL'),
   // Comma separated, e.g. "http://localhost:3000,https://app.example.com".
   // Normalised to bare origins so "https://app.example.com/" still matches the Origin header.
   ALLOWED_ORIGINS: requiredString('ALLOWED_ORIGINS')

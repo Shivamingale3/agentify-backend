@@ -76,7 +76,7 @@ export default tseslint.config(
       ],
 
       // --- Style ---
-      '@typescript-eslint/consistent-type-definitions': ['error', 'interface'],
+      '@typescript-eslint/consistent-type-definitions': 'off', // or 'off'
 
       // --- Console ---
       'no-console': 'error',

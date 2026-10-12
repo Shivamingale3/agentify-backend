@@ -8,6 +8,10 @@
       "model": "Session",
       "namespace": "public"
     },
+    "temporary_tasks": {
+      "model": "TemporaryTasks",
+      "namespace": "public"
+    },
     "users": {
       "model": "User",
       "namespace": "public"
@@ -16,6 +20,17 @@
   "domain": {
     "namespaces": {
       "public": {
+        "enum": {
+          "TemporaryTaskType": {
+            "codecId": "pg/text@1",
+            "members": [
+              {
+                "name": "EMAIL_VERIFICATION",
+                "value": "EMAIL_VERIFICATION"
+              }
+            ]
+          }
+        },
         "models": {
           "Session": {
             "fields": {
@@ -95,8 +110,92 @@
               "table": "sessions"
             }
           },
+          "TemporaryTasks": {
+            "fields": {
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "taskData": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/json@1",
+                  "kind": "scalar"
+                }
+              },
+              "taskType": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                },
+                "valueSet": {
+                  "entityKind": "enum",
+                  "entityName": "TemporaryTaskType",
+                  "namespaceId": "public",
+                  "plane": "domain"
+                }
+              },
+              "token": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "updatedAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {},
+            "storage": {
+              "fields": {
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "taskData": {
+                  "column": "taskData"
+                },
+                "taskType": {
+                  "column": "taskType"
+                },
+                "token": {
+                  "column": "token"
+                },
+                "updatedAt": {
+                  "column": "updatedAt"
+                }
+              },
+              "namespaceId": "public",
+              "table": "temporary_tasks"
+            }
+          },
           "User": {
             "fields": {
+              "countryCode": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "createdAt": {
                 "nullable": true,
                 "type": {
@@ -108,6 +207,13 @@
                 "nullable": false,
                 "type": {
                   "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "emailVerified": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
                   "kind": "scalar"
                 }
               },
@@ -157,11 +263,17 @@
             "relations": {},
             "storage": {
               "fields": {
+                "countryCode": {
+                  "column": "countryCode"
+                },
                 "createdAt": {
                   "column": "createdAt"
                 },
                 "email": {
                   "column": "email"
+                },
+                "emailVerified": {
+                  "column": "emailVerified"
                 },
                 "firstName": {
                   "column": "firstName"
@@ -266,8 +378,86 @@
               },
               "uniques": []
             },
+            "temporary_tasks": {
+              "checks": [
+                {
+                  "expression": "\"taskType\" IN ('EMAIL_VERIFICATION')",
+                  "name": "temporary_tasks_taskType_check_bf5fb16d",
+                  "prefix": "temporary_tasks_taskType_check"
+                }
+              ],
+              "columns": {
+                "createdAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "taskData": {
+                  "codecId": "pg/json@1",
+                  "nativeType": "json",
+                  "nullable": false
+                },
+                "taskType": {
+                  "codecId": "pg/text@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": "EMAIL_VERIFICATION"
+                  },
+                  "nativeType": "text",
+                  "nullable": false,
+                  "valueSet": {
+                    "entityKind": "valueSet",
+                    "entityName": "TemporaryTaskType",
+                    "namespaceId": "public",
+                    "plane": "storage"
+                  }
+                },
+                "token": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "updatedAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [],
+              "indexes": [],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "token"
+                  ]
+                }
+              ]
+            },
             "users": {
               "columns": {
+                "countryCode": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
                 "createdAt": {
                   "codecId": "pg/timestamptz-temporal@1",
                   "default": {
@@ -280,6 +470,15 @@
                 "email": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
+                  "nullable": false
+                },
+                "emailVerified": {
+                  "codecId": "pg/bool@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": false
+                  },
+                  "nativeType": "bool",
                   "nullable": false
                 },
                 "firstName": {
@@ -337,16 +536,24 @@
                 }
               ]
             }
+          },
+          "valueSet": {
+            "TemporaryTaskType": {
+              "kind": "valueSet",
+              "values": [
+                "EMAIL_VERIFICATION"
+              ]
+            }
           }
         },
         "id": "public",
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "6f24c7f6604c34d48e5f86531729a974d83802aa23b542d75f62567f1c50a645"
+    "storageHash": "2d0b8d9ce62334a1dec4b1cead43fba21628b4b34933b14eb6df0ab0f58a86b4"
   },
   "execution": {
-    "executionHash": "073ef3b7f3c10c893ae3a2e45884b87f19495ca929634ac780c594bf0a806f49",
+    "executionHash": "045262be4507d7a05bcdc16e1a60a4ec8dfc1baaba49c5d5c665499e138a294a",
     "mutations": {
       "defaults": [
         {
@@ -356,6 +563,17 @@
           },
           "ref": {
             "entry": "sessions",
+            "field": "id",
+            "namespace": "public"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "ulid",
+            "kind": "generator"
+          },
+          "ref": {
+            "entry": "temporary_tasks",
             "field": "id",
             "namespace": "public"
           }

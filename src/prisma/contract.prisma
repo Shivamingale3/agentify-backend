@@ -1,15 +1,28 @@
 // use prisma-8
 model User {
-  id        String    @id @default(ulid())
-  firstName String?
-  lastName  String?
-  mobile    String?   @unique
-  email     String    @unique
-  password  String
-  createdAt DateTime? @default(now())
-  updatedAt DateTime? @default(now())
+  id            String    @id @default(ulid())
+  firstName     String?
+  lastName      String?
+  countryCode   String?
+  mobile        String?   @unique
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  password      String
+  createdAt     DateTime? @default(now())
+  updatedAt     DateTime? @default(now())
 
   @@map("users")
+}
+
+model TemporaryTasks {
+  id        String            @id @default(ulid())
+  taskType  TemporaryTaskType @default(EMAIL_VERIFICATION)
+  token     String            @unique
+  taskData  Json
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @default(now())
+
+  @@map("temporary_tasks")
 }
 
 model Session {
@@ -21,4 +34,8 @@ model Session {
   updatedAt DateTime? @default(now())
 
   @@map("sessions")
+}
+
+enum TemporaryTaskType {
+  EMAIL_VERIFICATION
 }
