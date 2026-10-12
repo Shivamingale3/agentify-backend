@@ -48,11 +48,11 @@ class CacheService {
   }
 
   public async del(key: string): Promise<void> {
-    return this.provider.del(key);
+    await this.provider.del(key);
   }
 
   public async flush(): Promise<void> {
-    return this.provider.flush();
+    await this.provider.flush();
   }
 
   /** Graceful shutdown — call on SIGTERM / SIGINT. */

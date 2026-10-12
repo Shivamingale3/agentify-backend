@@ -45,7 +45,7 @@ class RedisCacheProvider implements CacheProvider {
   public async set(key: string, value: string, ttl?: number): Promise<void> {
     try {
       if (ttl) {
-        await this.cacheInstance.set(key, value, { EX: ttl });
+        await this.cacheInstance.set(key, value, { expiration: { type: 'PX', value: ttl } });
       } else {
         await this.cacheInstance.set(key, value);
       }
