@@ -3,9 +3,12 @@ import { db, dbInstance } from '#providers/db.provider.js';
 import temporaryTaskService from '#services/temporaryTask.service.js';
 import { isUniqueViolation } from '#utils/errorGuards.js';
 
-const taskFor = (token: string) => ({
+const inOneHour = (): Temporal.Instant => Temporal.Now.instant().add({ hours: 1 });
+
+const taskFor = (token: string, expiresAt: Temporal.Instant = inOneHour()) => ({
   data: {
     token,
+    expiresAt,
     taskType: 'EMAIL_VERIFICATION' as const,
     taskData: {
       token,
@@ -70,5 +73,23 @@ describe('temporaryTaskService (real Postgres)', () => {
     ).rejects.toThrow('boom');
 
     expect(await temporaryTaskService.getTaskByToken('tok-1')).not.toBeNull();
+  });
+
+  // Regression: unused expired tasks used to stay in the table forever.
+  it('deleteExpired removes only tasks whose expiresAt has passed', async () => {
+    const past = Temporal.Now.instant().subtract({ minutes: 1 });
+    await temporaryTaskService.createTask(taskFor('expired-1', past));
+    await temporaryTaskService.createTask(taskFor('expired-2', past));
+    await temporaryTaskService.createTask(taskFor('live'));
+
+    expect(await temporaryTaskService.deleteExpired()).toBe(2);
+
+    const remaining = await db.public.TemporaryTasks.all().toArray();
+    expect(remaining.map((task) => task.token)).toEqual(['live']);
+  });
+
+  it('deleteExpired returns 0 when nothing has expired', async () => {
+    await temporaryTaskService.createTask(taskFor('live'));
+    expect(await temporaryTaskService.deleteExpired()).toBe(0);
   });
 });

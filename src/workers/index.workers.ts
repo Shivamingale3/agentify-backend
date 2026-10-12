@@ -3,12 +3,14 @@ import type { QueueJob } from '#interfaces/queue.interface.js';
 import type { JobType, JobWorker } from '#types/jobs.types.js';
 import { jobPayloadSchema } from '#validationSchemas/jobs/jobPayload.schema.js';
 import { buildWorker } from '#workers/build.worker.js';
+import { cleanupTemporaryTasksWorker } from '#workers/cleanupTemporaryTasks.worker.js';
 import { emailWorker } from '#workers/email.worker.js';
 
 /** One worker per job type. Adding a type to JobPayload without a worker here fails to compile. */
 const workers: { [K in JobType]: JobWorker<K> } = {
   email: emailWorker,
   build: buildWorker,
+  cleanupTemporaryTasks: cleanupTemporaryTasksWorker,
 };
 
 /**

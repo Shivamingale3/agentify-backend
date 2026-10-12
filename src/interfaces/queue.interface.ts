@@ -57,13 +57,19 @@ export interface MQProvider {
    * Add a job to a named queue.
    * @returns The job ID assigned by the backend.
    */
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
-  addJob<T = Record<string, unknown>>(
+  addJob(queueName: string, jobName: string, data: unknown, options?: JobOptions): Promise<string>;
+
+  /**
+   * Create or update a repeating job. Idempotent per `schedulerId`, so it is safe to call on
+   * every worker start: several worker processes still produce one job per interval.
+   */
+  scheduleJob(
     queueName: string,
+    schedulerId: string,
+    everyMs: number,
     jobName: string,
-    data: T,
-    options?: JobOptions,
-  ): Promise<string>;
+    data: unknown,
+  ): Promise<void>;
 
   /**
    * Register a worker that continuously processes jobs from a named queue.

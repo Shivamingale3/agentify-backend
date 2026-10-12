@@ -2,11 +2,15 @@ import { describe, expect, it, vi } from 'vitest';
 import type { QueueJob } from '#interfaces/queue.interface.js';
 import type { JobPayload } from '#types/jobs.types.js';
 import { buildWorker } from '#workers/build.worker.js';
+import { cleanupTemporaryTasksWorker } from '#workers/cleanupTemporaryTasks.worker.js';
 import { emailWorker } from '#workers/email.worker.js';
 import { dispatchJob } from '#workers/index.workers.js';
 
 vi.mock('#workers/email.worker.js', () => ({ emailWorker: vi.fn() }));
 vi.mock('#workers/build.worker.js', () => ({ buildWorker: vi.fn() }));
+vi.mock('#workers/cleanupTemporaryTasks.worker.js', () => ({
+  cleanupTemporaryTasksWorker: vi.fn(),
+}));
 
 function job(data: JobPayload): QueueJob<JobPayload> {
   return { id: 'j1', name: data.type, attemptsMade: 1, data };
@@ -33,6 +37,13 @@ describe('dispatchJob', () => {
     await dispatchJob(job({ type: 'build', data }));
 
     expect(buildWorker).toHaveBeenCalledWith(expect.objectContaining({ id: 'j1', data }));
+    expect(emailWorker).not.toHaveBeenCalled();
+  });
+
+  it('routes cleanup jobs to the cleanup worker', async () => {
+    await dispatchJob(job({ type: 'cleanupTemporaryTasks', data: {} }));
+
+    expect(cleanupTemporaryTasksWorker).toHaveBeenCalledWith(expect.objectContaining({ data: {} }));
     expect(emailWorker).not.toHaveBeenCalled();
   });
 

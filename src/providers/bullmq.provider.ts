@@ -39,8 +39,7 @@ class BullMQProvider implements MQProvider {
   };
   private producerConnection: Redis;
   private workerConnection: Redis | undefined;
-  // eslint-disable-next-line @typescript-eslint/consistent-generic-constructors
-  private queues: Map<string, Queue> = new Map();
+  private queues = new Map<string, Queue>();
   private workers: Worker[] = [];
 
   constructor() {
@@ -96,16 +95,29 @@ class BullMQProvider implements MQProvider {
     return queue;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
-  async addJob<T = Record<string, unknown>>(
+  async addJob(
     queueName: string,
     jobName: string,
-    data: T,
+    data: unknown,
     options?: JobOptions,
   ): Promise<string> {
     const queue = this.getQueue(queueName);
     const job = await queue.add(jobName, data, { ...DEFAULT_JOB_OPTIONS, ...options });
     return job.id ?? '';
+  }
+
+  async scheduleJob(
+    queueName: string,
+    schedulerId: string,
+    everyMs: number,
+    jobName: string,
+    data: unknown,
+  ): Promise<void> {
+    await this.getQueue(queueName).upsertJobScheduler(
+      schedulerId,
+      { every: everyMs },
+      { name: jobName, data, opts: DEFAULT_JOB_OPTIONS },
+    );
   }
 
   registerWorker<T = Record<string, unknown>>(

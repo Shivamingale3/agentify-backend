@@ -34,7 +34,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'4dd2bfa90ab831b3c4d420e7b5aa9ecf3b799a4d18a7b157d950181ed9316035'>;
+  StorageHashBase<'bd580deca50020410750609a7c404e97af5d49d844afe484bcd4fdb9dd0f6d0d'>;
 export type ExecutionHash =
   ExecutionHashBase<'a39716bbf2e94aa7a9a40ced10a975a5a0960efb57764836dca7214625b72ae2'>;
 export type ProfileHash =
@@ -259,6 +259,7 @@ export type FieldOutputTypes = {
     };
     readonly TemporaryTasks: {
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
+      readonly expiresAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
       readonly id: CodecTypes['pg/text@1']['output'];
       readonly taskData: CodecTypes['pg/json@1']['output'];
       readonly taskType: 'EMAIL_VERIFICATION';
@@ -290,6 +291,7 @@ export type FieldInputTypes = {
     };
     readonly TemporaryTasks: {
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
+      readonly expiresAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
       readonly id: CodecTypes['pg/text@1']['input'];
       readonly taskData: CodecTypes['pg/json@1']['input'];
       readonly taskType: 'EMAIL_VERIFICATION';
@@ -321,6 +323,7 @@ export type StorageColumnTypes = {
     };
     readonly temporary_tasks: {
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
+      readonly expiresAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
       readonly id: CodecTypes['pg/text@1']['output'];
       readonly taskData: CodecTypes['pg/json@1']['output'];
       readonly taskType: 'EMAIL_VERIFICATION';
@@ -352,6 +355,7 @@ export type StorageColumnInputTypes = {
     };
     readonly temporary_tasks: {
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
+      readonly expiresAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
       readonly id: CodecTypes['pg/text@1']['input'];
       readonly taskData: CodecTypes['pg/json@1']['input'];
       readonly taskType: 'EMAIL_VERIFICATION';
@@ -385,6 +389,7 @@ export namespace Models {
   };
   export type public_TemporaryTasks = {
     createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
+    expiresAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
     id: CodecTypes['pg/text@1']['output'];
     taskData: CodecTypes['pg/json@1']['output'];
     taskType: 'EMAIL_VERIFICATION';
@@ -495,6 +500,11 @@ type ContractBase = Omit<
                   readonly nullable: false;
                   readonly default: { readonly kind: 'function'; readonly expression: 'now()' };
                 };
+                readonly expiresAt: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                  readonly nullable: false;
+                };
                 readonly id: {
                   readonly nativeType: 'text';
                   readonly codecId: 'pg/text@1';
@@ -527,7 +537,14 @@ type ContractBase = Omit<
               };
               primaryKey: { readonly columns: readonly ['id'] };
               uniques: readonly [{ readonly columns: readonly ['token'] }];
-              indexes: readonly [];
+              indexes: readonly [
+                {
+                  readonly name: 'temporary_tasks_expiresAt_idx_6b6b8c10';
+                  readonly prefix: 'temporary_tasks_expiresAt_idx';
+                  readonly columns: readonly ['expiresAt'];
+                  readonly unique: false;
+                },
+              ];
               foreignKeys: readonly [];
             };
             readonly users: {
@@ -685,6 +702,13 @@ type ContractBase = Omit<
                   readonly codecId: 'pg/timestamptz-temporal@1';
                 };
               };
+              readonly expiresAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                };
+              };
               readonly id: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
@@ -715,6 +739,7 @@ type ContractBase = Omit<
               readonly namespaceId: 'public';
               readonly fields: {
                 readonly createdAt: { readonly column: 'createdAt' };
+                readonly expiresAt: { readonly column: 'expiresAt' };
                 readonly id: { readonly column: 'id' };
                 readonly taskData: { readonly column: 'taskData' };
                 readonly taskType: { readonly column: 'taskType' };

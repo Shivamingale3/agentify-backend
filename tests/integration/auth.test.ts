@@ -163,6 +163,7 @@ describe('authService.verifyEmail edge cases', () => {
     const token = 'expired-token';
     await db.public.TemporaryTasks.create({
       token,
+      expiresAt: Temporal.Now.instant().subtract({ seconds: 1 }),
       taskType: 'EMAIL_VERIFICATION',
       taskData: {
         token,
@@ -177,6 +178,8 @@ describe('authService.verifyEmail edge cases', () => {
       message: 'Token expired',
     });
     expect(await db.public.User.first({ id: user.id })).toMatchObject({ emailVerified: false });
+    // Regression: the dead token is removed right away instead of lingering.
+    expect(await db.public.TemporaryTasks.first({ token })).toBeNull();
   });
 
   it('rejects a cached token whose DB task was already consumed', async () => {

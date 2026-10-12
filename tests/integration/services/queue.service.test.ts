@@ -45,4 +45,15 @@ describe('queueService.enqueueJob (real Redis)', () => {
   it('checkConnection succeeds against a reachable Redis', async () => {
     await expect(queueService.checkConnection()).resolves.toBeUndefined();
   });
+
+  it('scheduleJob is idempotent: calling it on every worker start keeps one scheduler', async () => {
+    const payload = { type: 'cleanupTemporaryTasks', data: {} } as const;
+
+    await queueService.scheduleJob('cleanup-temporary-tasks', 60_000, payload);
+    await queueService.scheduleJob('cleanup-temporary-tasks', 60_000, payload);
+
+    const schedulers = await inspector.getJobSchedulers();
+    expect(schedulers).toHaveLength(1);
+    expect(schedulers[0]).toMatchObject({ key: 'cleanup-temporary-tasks', every: 60_000 });
+  });
 });

@@ -119,6 +119,13 @@
                   "kind": "scalar"
                 }
               },
+              "expiresAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
               "id": {
                 "nullable": false,
                 "type": {
@@ -166,6 +173,9 @@
               "fields": {
                 "createdAt": {
                   "column": "createdAt"
+                },
+                "expiresAt": {
+                  "column": "expiresAt"
                 },
                 "id": {
                   "column": "id"
@@ -392,6 +402,11 @@
                   "nativeType": "timestamptz",
                   "nullable": false
                 },
+                "expiresAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
                 "id": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
@@ -429,7 +444,16 @@
                 }
               },
               "foreignKeys": [],
-              "indexes": [],
+              "indexes": [
+                {
+                  "columns": [
+                    "expiresAt"
+                  ],
+                  "name": "temporary_tasks_expiresAt_idx_6b6b8c10",
+                  "prefix": "temporary_tasks_expiresAt_idx",
+                  "unique": false
+                }
+              ],
               "primaryKey": {
                 "columns": [
                   "id"
@@ -538,7 +562,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "4dd2bfa90ab831b3c4d420e7b5aa9ecf3b799a4d18a7b157d950181ed9316035"
+    "storageHash": "bd580deca50020410750609a7c404e97af5d49d844afe484bcd4fdb9dd0f6d0d"
   },
   "execution": {
     "executionHash": "a39716bbf2e94aa7a9a40ced10a975a5a0960efb57764836dca7214625b72ae2",

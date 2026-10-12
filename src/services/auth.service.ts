@@ -82,17 +82,18 @@ class AuthService {
     orm: Orm,
   ): Promise<EmailVerificationTask> {
     const token = crypto.randomBytes(32).toString('hex');
-    const expiresAt = new Date(Date.now() + EMAIL_VERIFICATION_TTL_MS);
+    const expiresAt = Temporal.Now.instant().add({ milliseconds: EMAIL_VERIFICATION_TTL_MS });
     const payload: EmailVerificationTask = {
       token,
       email: user.email,
       userId: user.id,
-      validTill: expiresAt.toISOString(),
+      validTill: expiresAt.toString(),
     };
     const task: CreateInput<Contract, 'TemporaryTasks'> = {
       token,
       taskData: payload,
       taskType: 'EMAIL_VERIFICATION',
+      expiresAt,
     };
     await temporaryTaskService.createTask({ data: task }, orm);
     return payload;
@@ -113,6 +114,9 @@ class AuthService {
         throw new HttpException(StatusCodes.UNAUTHORIZED, 'Invalid token');
       }
       if (new Date(payload.validTill) < new Date()) {
+        // The token can never succeed now, so drop it instead of leaving it for the cleanup job.
+        await temporaryTaskService.deleteTaskByToken(token);
+        await cacheService.del(token);
         throw new HttpException(StatusCodes.UNAUTHORIZED, 'Token expired');
       }
 

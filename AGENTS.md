@@ -33,7 +33,7 @@ Node 24 (ESM, NodeNext) · TypeScript strict · Express 5 · Prisma 8 RC (`@pris
 - Models are namespaced: `db.public.User`, never `db.User`.
 - `update()` / `delete()` require a prior `.where(...)` and return the row or `null`.
 - `src/prisma/contract.json` and `contract.d.ts` are **generated**. Never hand-edit; regenerate and commit all three contract files together.
-- `DateTime` fields are Temporal values, not `Date`. Check the skill's contract reference before writing date code.
+- `DateTime` fields are Temporal values, not `Date` (e.g. `Temporal.Now.instant().add({ hours: 1 })`). The global is installed in `db.provider.ts` (and `tests/setup.ts`) and typed by `src/types/temporal.d.ts`; never import `Temporal` from `temporal-polyfill` directly.
 
 ## Data and transactions
 

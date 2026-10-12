@@ -17,4 +17,5 @@ const buildJobDataSchema = z.object({
 export const jobPayloadSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('email'), data: mailMessageSchema }),
   z.object({ type: z.literal('build'), data: buildJobDataSchema }),
+  z.object({ type: z.literal('cleanupTemporaryTasks'), data: z.record(z.string(), z.never()) }),
 ]) satisfies z.ZodType<JobPayload>;

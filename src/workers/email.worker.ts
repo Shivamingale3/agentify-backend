@@ -6,9 +6,10 @@ import { logger } from '#utils/logger.js';
 export const emailWorker: JobWorker<'email'> = async (job) => {
   try {
     await mailService.sendMail(job.data);
-    logger.info('Email sent successfully to %s', job.data.to);
+    logger.info('Email job %s sent', job.id);
   } catch (error) {
-    logger.error('Email sending failed for user %s', job.data.to, { error });
+    // Job id, not the address: BullMQ keeps failed jobs (with the recipient) for 7 days.
+    logger.error('Email job %s failed', job.id, { error });
     throw error;
   }
 };

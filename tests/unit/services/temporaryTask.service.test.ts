@@ -24,7 +24,12 @@ beforeEach(() => {
 describe('TemporaryTaskService', () => {
   it('createTask creates the row through the default orm', async () => {
     defaultOrm.TemporaryTasks.create.mockResolvedValue(task);
-    const data = { token: 'tok', taskData: { a: 1 }, taskType: 'EMAIL_VERIFICATION' } as const;
+    const data = {
+      token: 'tok',
+      taskData: { a: 1 },
+      taskType: 'EMAIL_VERIFICATION',
+      expiresAt: Temporal.Now.instant(),
+    } as const;
 
     await expect(temporaryTaskService.createTask({ data })).resolves.toBe(task);
     expect(defaultOrm.TemporaryTasks.create).toHaveBeenCalledWith(data);
@@ -35,7 +40,14 @@ describe('TemporaryTaskService', () => {
     tx.TemporaryTasks.create.mockResolvedValue(task);
 
     await temporaryTaskService.createTask(
-      { data: { token: 'tok', taskData: {}, taskType: 'EMAIL_VERIFICATION' } },
+      {
+        data: {
+          token: 'tok',
+          taskData: {},
+          taskType: 'EMAIL_VERIFICATION',
+          expiresAt: Temporal.Now.instant(),
+        },
+      },
       tx.orm as unknown as Orm,
     );
 

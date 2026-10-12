@@ -21,7 +21,10 @@ model TemporaryTasks {
   taskData  Json
   createdAt DateTime          @default(now())
   updatedAt temporal.updatedAt()
+  expiresAt DateTime
 
+  // The cleanup job deletes by expiresAt.
+  @@index([expiresAt])
   @@map("temporary_tasks")
 }
 

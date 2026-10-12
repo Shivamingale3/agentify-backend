@@ -3,7 +3,13 @@ import bullmqProvider from '#providers/bullmq.provider.js';
 import queueService, { QUEUES } from '#services/queue.service.js';
 
 vi.mock('#providers/bullmq.provider.js', () => ({
-  default: { connect: vi.fn(), addJob: vi.fn(), registerWorker: vi.fn(), close: vi.fn() },
+  default: {
+    connect: vi.fn(),
+    addJob: vi.fn(),
+    scheduleJob: vi.fn(),
+    registerWorker: vi.fn(),
+    close: vi.fn(),
+  },
 }));
 
 describe('QueueService', () => {
@@ -58,5 +64,19 @@ describe('QueueService', () => {
     await queueService.shutdown();
 
     expect(bullmqProvider.close).toHaveBeenCalledOnce();
+  });
+
+  it('scheduleJob schedules the payload on the jobs queue, named by its type', async () => {
+    const payload = { type: 'cleanupTemporaryTasks', data: {} } as const;
+
+    await queueService.scheduleJob('cleanup', 60_000, payload);
+
+    expect(bullmqProvider.scheduleJob).toHaveBeenCalledWith(
+      QUEUES.JOBS,
+      'cleanup',
+      60_000,
+      'cleanupTemporaryTasks',
+      payload,
+    );
   });
 });

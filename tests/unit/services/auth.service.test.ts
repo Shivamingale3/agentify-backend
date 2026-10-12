@@ -193,7 +193,10 @@ describe('AuthService.verifyEmail', () => {
     );
 
     await expectHttpError(authService.verifyEmail('tok'), StatusCodes.UNAUTHORIZED);
-    expect(temporaryTaskService.deleteTaskByToken).not.toHaveBeenCalled();
+    // Regression: the dead token is removed immediately; the user is never touched.
+    expect(temporaryTaskService.deleteTaskByToken).toHaveBeenCalledWith('tok');
+    expect(cacheService.del).toHaveBeenCalledWith('tok');
+    expect(userService.updateUser).not.toHaveBeenCalled();
   });
 
   it('rejects a token that was already used', async () => {

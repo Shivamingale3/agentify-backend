@@ -26,6 +26,17 @@ class TemporaryTaskService {
   ): Promise<Models.public_TemporaryTasks | null> {
     return await orm.public.TemporaryTasks.where({ token }).delete();
   }
+
+  /** Deletes every task whose `expiresAt` is before `now`. Returns how many were removed. */
+  public async deleteExpired(
+    now: Temporal.Instant = Temporal.Now.instant(),
+    orm: Orm = this.orm,
+  ): Promise<number> {
+    const deleted = await orm.public.TemporaryTasks.where((task) => task.expiresAt.lt(now))
+      .deleteAll()
+      .toArray();
+    return deleted.length;
+  }
 }
 
 const temporaryTaskService = new TemporaryTaskService(db);

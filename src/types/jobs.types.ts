@@ -12,7 +12,9 @@ export interface BuildJobData {
  * (the compiler errors until you do).
  */
 export type JobPayload =
-  { type: 'email'; data: MailMessage } | { type: 'build'; data: BuildJobData };
+  | { type: 'email'; data: MailMessage }
+  | { type: 'build'; data: BuildJobData }
+  | { type: 'cleanupTemporaryTasks'; data: Record<string, never> };
 
 export type JobType = JobPayload['type'];
 

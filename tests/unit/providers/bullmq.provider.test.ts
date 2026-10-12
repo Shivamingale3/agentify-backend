@@ -42,6 +42,9 @@ const fake = vi.hoisted(() => {
     add = vi.fn((_name: string, _data: unknown, _opts: unknown) =>
       Promise.resolve<{ id?: string }>({ id: 'job-1' }),
     );
+    upsertJobScheduler = vi.fn((_id: string, _repeat: unknown, _template: unknown) =>
+      Promise.resolve({}),
+    );
     close = vi.fn(() => {
       closeLog.push(`queue:${this.name}`);
       return Promise.resolve();
@@ -295,5 +298,23 @@ describe('BullMQProvider.close', () => {
     await provider.close();
 
     expect(fake.closeLog).toEqual(['redis:1']);
+  });
+});
+
+describe('BullMQProvider.scheduleJob', () => {
+  it('upserts a scheduler on the named queue with the default job options', async () => {
+    await provider.scheduleJob('jobs', 'cleanup', 60_000, 'cleanupTemporaryTasks', { a: 1 });
+
+    const queue = only(fake.FakeQueue.instances);
+    expect(queue.name).toBe('jobs');
+    expect(queue.upsertJobScheduler).toHaveBeenCalledWith(
+      'cleanup',
+      { every: 60_000 },
+      {
+        name: 'cleanupTemporaryTasks',
+        data: { a: 1 },
+        opts: expect.objectContaining({ attempts: 3 }),
+      },
+    );
   });
 });

@@ -28,6 +28,7 @@ export default defineConfig({
   test: {
     env: testEnv,
     // Fresh mocks per test: clears calls and resets vi.fn() to its original implementation.
+    setupFiles: ['tests/setup.ts'],
     mockReset: true,
     restoreMocks: true,
     coverage: { provider: 'v8', include: ['src/**/*.ts'], exclude: ['src/prisma/**'] },
@@ -42,7 +43,7 @@ export default defineConfig({
           name: 'integration',
           include: ['tests/integration/**/*.test.ts'],
           globalSetup: ['tests/integration/globalSetup.ts'],
-          setupFiles: ['tests/integration/setup.ts'],
+          setupFiles: ['tests/setup.ts', 'tests/integration/setup.ts'],
           // One shared database: run files one at a time so truncation can't race.
           fileParallelism: false,
           testTimeout: 20_000,

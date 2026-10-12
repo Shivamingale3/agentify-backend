@@ -6,6 +6,8 @@ import type { JobPayload } from '#types/jobs.types.js';
 import { logger } from '#utils/logger.js';
 import { dispatchJob } from '#workers/index.workers.js';
 
+const ONE_HOUR_MS = 60 * 60 * 1000;
+
 /**
  * Worker process entry point. Runs separately from the API (server.ts);
  * start as many copies as you need — they all consume the same jobs queue.
@@ -17,6 +19,11 @@ async function startWorker(): Promise<void> {
 
     // Test Mail Service (email jobs need it)
     await mailService.checkConnection();
+
+    await queueService.scheduleJob('cleanup-temporary-tasks', ONE_HOUR_MS, {
+      type: 'cleanupTemporaryTasks',
+      data: {},
+    });
 
     queueService.onProcess<JobPayload>(QUEUES.JOBS, dispatchJob, {
       concurrency: env.WORKER_CONCURRENCY,

@@ -44,11 +44,10 @@ class QueueService {
   // ─── Generic helpers ───────────────────────────────────────────
 
   /** Enqueue any job on any queue. */
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
-  async enqueue<T = Record<string, unknown>>(
+  async enqueue(
     queueName: QueueName,
     jobName: string,
-    data: T,
+    data: unknown,
     options?: JobOptions,
   ): Promise<string> {
     const jobId = await this.provider.addJob(queueName, jobName, data, options);
@@ -61,6 +60,12 @@ class QueueService {
   /** Enqueue a job on the shared jobs queue, e.g. `enqueueJob({ type: 'email', data: {...} })`. */
   async enqueueJob(payload: JobPayload, options?: JobOptions): Promise<string> {
     return this.enqueue(QUEUES.JOBS, payload.type, payload, options);
+  }
+
+  /** Run a job on the shared jobs queue every `everyMs`. Idempotent per `schedulerId`. */
+  async scheduleJob(schedulerId: string, everyMs: number, payload: JobPayload): Promise<void> {
+    await this.provider.scheduleJob(QUEUES.JOBS, schedulerId, everyMs, payload.type, payload);
+    logger.info(`⏰ Scheduled "${payload.type}" every ${String(everyMs)}ms [${schedulerId}]`);
   }
 
   /** Register a worker for a queue. Call once at startup. */

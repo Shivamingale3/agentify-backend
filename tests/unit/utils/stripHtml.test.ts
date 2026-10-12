@@ -15,4 +15,10 @@ describe('stripHtml', () => {
   it('returns an empty string for markup only', () => {
     expect(stripHtml('<br/><div></div>')).toBe('');
   });
+
+  // Regression: "&amp;" was decoded first, so double-encoded text was decoded twice.
+  it('decodes each entity once, never double-decoding', () => {
+    expect(stripHtml('&amp;lt;script&amp;gt;')).toBe('&lt;script&gt;');
+    expect(stripHtml('&amp;amp;')).toBe('&amp;');
+  });
 });
