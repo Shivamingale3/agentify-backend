@@ -21,7 +21,7 @@ class RedisCacheProvider implements CacheProvider {
     });
   }
 
-  public async checkConnnection(): Promise<void> {
+  public async checkConnection(): Promise<void> {
     try {
       await this.cacheInstance.connect();
       logger.info('✅ Redis Connection Successsful');

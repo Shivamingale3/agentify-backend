@@ -122,8 +122,19 @@ describe('envSchema', () => {
 
     it('rejects entries that are not URLs', () => {
       expect(messages({ ALLOWED_ORIGINS: 'http://ok.test,not a url' })).toEqual([
-        'ALLOWED_ORIGINS must be a comma separated list of URLs',
+        'ALLOWED_ORIGINS must be a comma separated list of http(s) URLs',
       ]);
     });
+
+    // Regression: these all have origin "null", which would let sandboxed iframes / file:// pages
+    // make credentialed CORS requests.
+    it.each(['localhost:3000', 'file:///etc/passwd', 'javascript:alert(1)', 'ftp://files.test'])(
+      'rejects the non-http(s) origin %s',
+      (origin) => {
+        expect(messages({ ALLOWED_ORIGINS: origin })).toEqual([
+          'ALLOWED_ORIGINS must be a comma separated list of http(s) URLs',
+        ]);
+      },
+    );
   });
 });

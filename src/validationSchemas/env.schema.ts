@@ -26,7 +26,18 @@ export const envSchema = z.object({
         .map((origin) => origin.trim())
         .filter(Boolean),
     )
-    .pipe(z.array(z.url('ALLOWED_ORIGINS must be a comma separated list of URLs')).min(1))
+    // http(s) only: other schemes (file:, javascript:, a bare "localhost:3000") have origin "null",
+    // which would let sandboxed iframes and file:// pages make credentialed requests.
+    .pipe(
+      z
+        .array(
+          z.url({
+            protocol: /^https?$/,
+            error: 'ALLOWED_ORIGINS must be a comma separated list of http(s) URLs',
+          }),
+        )
+        .min(1),
+    )
     .transform((origins) => origins.map((origin) => new URL(origin).origin)),
   DATABASE_URL: requiredString('DATABASE_URL'),
   EMAIL_HOST: requiredString('EMAIL_HOST'),

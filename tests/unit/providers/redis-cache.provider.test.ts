@@ -50,9 +50,9 @@ describe('RedisCacheProvider construction', () => {
   });
 });
 
-describe('RedisCacheProvider.checkConnnection', () => {
+describe('RedisCacheProvider.checkConnection', () => {
   it('connects the client', async () => {
-    await provider.checkConnnection();
+    await provider.checkConnection();
 
     expect(fake.client.connect).toHaveBeenCalledOnce();
   });
@@ -61,7 +61,7 @@ describe('RedisCacheProvider.checkConnnection', () => {
     const error = new Error('refused');
     fake.client.connect.mockRejectedValue(error);
 
-    await expect(provider.checkConnnection()).rejects.toBe(error);
+    await expect(provider.checkConnection()).rejects.toBe(error);
   });
 });
 

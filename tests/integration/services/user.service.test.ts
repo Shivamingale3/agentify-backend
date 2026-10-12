@@ -49,6 +49,23 @@ describe('userService (real Postgres)', () => {
     expect(await db.public.User.first({ id: created.id })).toMatchObject({ emailVerified: true });
   });
 
+  // Regression: updatedAt used to keep its creation time forever (temporal.updatedAt() fixes it).
+  it('sets updatedAt on create and bumps it on every update', async () => {
+    const created = await userService.createUser(userInput());
+    expect(created.updatedAt).not.toBeNull();
+    await new Promise((resolve) => setTimeout(resolve, 5));
+
+    const updated = await userService.updateUser({
+      userId: created.id,
+      userData: { lastName: 'Doe' },
+    });
+
+    // Temporal.Instant stringifies to ISO 8601, which Date.parse understands.
+    expect(Date.parse(String(updated?.updatedAt))).toBeGreaterThan(
+      Date.parse(String(created.updatedAt)),
+    );
+  });
+
   it('returns null when updating a missing user', async () => {
     expect(
       await userService.updateUser({ userId: 'does-not-exist', userData: { emailVerified: true } }),

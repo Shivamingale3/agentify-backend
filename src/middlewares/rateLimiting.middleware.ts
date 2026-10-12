@@ -16,7 +16,9 @@ export function createRateLimiter(configKey: RateLimitKey): RateLimitRequestHand
     standardHeaders: false,
     legacyHeaders: false,
     handler: (_req, res, _next, options) => {
-      const retryAfterSeconds = Math.ceil(config.windowMs / 1000);
+      // Time left in the current window; fall back to the full window if the store gives no reset time.
+      const resetTime = _req.rateLimit?.resetTime?.getTime() ?? Date.now() + config.windowMs;
+      const retryAfterSeconds = Math.max(1, Math.ceil((resetTime - Date.now()) / 1000));
 
       res.setHeader('RateLimit-Limit', config.maxRequests);
       res.setHeader('RateLimit-Remaining', 0);

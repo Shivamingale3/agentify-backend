@@ -9,6 +9,7 @@ import cacheService from '#services/cache.service.js';
 import queueService from '#services/queue.service.js';
 import temporaryTaskService from '#services/temporaryTask.service.js';
 import userService from '#services/user.service.js';
+import { logger } from '#utils/logger.js';
 import type { EmailVerificationTask } from '#types/auth.types.js';
 
 // Unit test: every I/O boundary is mocked, so this only exercises AuthService's own logic.
@@ -237,5 +238,17 @@ describe('AuthService.verifyEmail', () => {
 
     await expect(authService.verifyEmail('tok')).rejects.toBe(error);
     expect(cacheService.del).not.toHaveBeenCalled();
+  });
+
+  // Regression: the raw token used to be written to the error log.
+  it('never logs the token when verification fails unexpectedly', async () => {
+    const logError = vi.spyOn(logger, 'error');
+    vi.mocked(cacheService.get).mockResolvedValue(payload());
+    vi.mocked(temporaryTaskService.deleteTaskByToken).mockRejectedValue(new Error('db down'));
+
+    await expect(authService.verifyEmail('tok')).rejects.toThrow('db down');
+
+    expect(logError).toHaveBeenCalled();
+    expect(JSON.stringify(logError.mock.calls)).not.toContain('tok');
   });
 });

@@ -1,4 +1,18 @@
+const HTML_ESCAPES: Record<string, string> = {
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#39;',
+};
+
+/** Escape text for HTML element content and quoted attribute values. */
+export const escapeHtml = (value: string): string =>
+  value.replace(/[&<>"']/g, (char) => HTML_ESCAPES[char] ?? char);
+
 export const emailVerificationTemplate = (email: string, link: string): string => {
+  const safeEmail = escapeHtml(email);
+  const safeLink = escapeHtml(link);
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -18,12 +32,12 @@ export const emailVerificationTemplate = (email: string, link: string): string =
         <div style="padding: 20px 0;">
             <h2 style="color: #333;">Verify Your Email Address</h2>
 
-            <p>Hi <strong>${email}</strong>,</p>
+            <p>Hi <strong>${safeEmail}</strong>,</p>
 
             <p>Thank you for joining Agentify! To complete your registration, please verify your email address by clicking the link below:</p>
 
             <div style="text-align: center; margin: 30px 0;">
-                <a href="${link}"
+                <a href="${safeLink}"
                    style="background-color: #007bff; color: white; padding: 12px 25px;
                           text-decoration: none; border-radius: 5px; font-weight: bold;
                           display: inline-block;">

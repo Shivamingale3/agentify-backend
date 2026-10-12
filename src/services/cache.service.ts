@@ -17,7 +17,7 @@ class CacheService {
   }
 
   public async checkConnection(): Promise<void> {
-    return this.provider.checkConnnection();
+    return this.provider.checkConnection();
   }
 
   public async get<T = unknown>(key: string, schema?: ZodType<T>): Promise<T | null> {

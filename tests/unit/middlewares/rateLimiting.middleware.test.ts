@@ -73,3 +73,24 @@ describe('globalRateLimiter', () => {
     expect(res.status).toBe(200);
   });
 });
+
+// Regression: Retry-After used to be the full window even late in the window.
+describe('Retry-After', () => {
+  it('reports the time left in the window, not the full window', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      const { maxRequests, windowMs } = RATE_LIMITS.CREATE_INCIDENT;
+      const app = appWith(createRateLimiter('CREATE_INCIDENT'));
+      await hit(app, maxRequests);
+      vi.setSystemTime(Date.now() + windowMs - 10_000); // 10s before the window resets
+
+      const res = await request(app).get('/ping');
+
+      expect(res.status).toBe(429);
+      expect(res.headers['retry-after']).toBe('10');
+      expect(res.headers['ratelimit-reset']).toBe('10');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});

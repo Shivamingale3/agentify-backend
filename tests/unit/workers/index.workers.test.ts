@@ -36,13 +36,25 @@ describe('dispatchJob', () => {
     expect(emailWorker).not.toHaveBeenCalled();
   });
 
-  it('throws for a job type with no worker', async () => {
+  it('rejects a job type with no worker', async () => {
     // Simulates a job enqueued by a newer deploy with a type this build does not know.
-    const unknown = { type: 'sms', data: {} } as unknown as JobPayload;
+    const unknown = { id: 'j1', name: 'sms', attemptsMade: 0, data: { type: 'sms', data: {} } };
 
-    await expect(dispatchJob(job(unknown))).rejects.toThrow(
-      'No worker registered for job type "sms"',
+    await expect(dispatchJob(unknown)).rejects.toThrow('Invalid payload for job j1');
+  });
+
+  // Regression: job.data from Redis used to reach workers unvalidated.
+  it.each([
+    ['email without a recipient', { type: 'email', data: { subject: 'S', text: 'T' } }],
+    ['email with a bad address', { type: 'email', data: { ...email, to: 'nope' } }],
+    ['build without a prompt', { type: 'build', data: { projectId: 'p1' } }],
+    ['a non-object payload', 'garbage'],
+  ])('rejects %s without calling any worker', async (_label, data) => {
+    await expect(dispatchJob({ id: 'j1', name: 'x', attemptsMade: 0, data })).rejects.toThrow(
+      'Invalid payload for job j1',
     );
+    expect(emailWorker).not.toHaveBeenCalled();
+    expect(buildWorker).not.toHaveBeenCalled();
   });
 
   it('propagates worker failures', async () => {

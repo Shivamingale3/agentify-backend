@@ -136,7 +136,7 @@ class AuthService {
       if (error instanceof HttpException) {
         throw error;
       }
-      logger.error('Email verification failed for token %s', token, { error });
+      logger.error('Email verification failed', { error });
       throw error;
     }
   }

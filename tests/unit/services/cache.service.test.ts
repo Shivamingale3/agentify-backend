@@ -5,7 +5,7 @@ import cacheService from '#services/cache.service.js';
 
 vi.mock('#providers/redis-cache.provider.js', () => ({
   default: {
-    checkConnnection: vi.fn(),
+    checkConnection: vi.fn(),
     get: vi.fn(),
     set: vi.fn(),
     del: vi.fn(),
@@ -88,14 +88,14 @@ describe('CacheService delegation', () => {
     await cacheService.flush();
     await cacheService.shutdown();
 
-    expect(cacheProvider.checkConnnection).toHaveBeenCalledOnce();
+    expect(cacheProvider.checkConnection).toHaveBeenCalledOnce();
     expect(cacheProvider.del).toHaveBeenCalledWith('k');
     expect(cacheProvider.flush).toHaveBeenCalledOnce();
     expect(cacheProvider.close).toHaveBeenCalledOnce();
   });
 
   it('propagates a failed connection check', async () => {
-    vi.mocked(cacheProvider.checkConnnection).mockRejectedValue(new Error('refused'));
+    vi.mocked(cacheProvider.checkConnection).mockRejectedValue(new Error('refused'));
 
     await expect(cacheService.checkConnection()).rejects.toThrow('refused');
   });

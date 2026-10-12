@@ -56,7 +56,7 @@
                 }
               },
               "updatedAt": {
-                "nullable": true,
+                "nullable": false,
                 "type": {
                   "codecId": "pg/timestamptz-temporal@1",
                   "kind": "scalar"
@@ -253,7 +253,7 @@
                 }
               },
               "updatedAt": {
-                "nullable": true,
+                "nullable": false,
                 "type": {
                   "codecId": "pg/timestamptz-temporal@1",
                   "kind": "scalar"
@@ -330,12 +330,8 @@
                 },
                 "updatedAt": {
                   "codecId": "pg/timestamptz-temporal@1",
-                  "default": {
-                    "expression": "now()",
-                    "kind": "function"
-                  },
                   "nativeType": "timestamptz",
-                  "nullable": true
+                  "nullable": false
                 },
                 "userId": {
                   "codecId": "pg/text@1",
@@ -428,10 +424,6 @@
                 },
                 "updatedAt": {
                   "codecId": "pg/timestamptz-temporal@1",
-                  "default": {
-                    "expression": "now()",
-                    "kind": "function"
-                  },
                   "nativeType": "timestamptz",
                   "nullable": false
                 }
@@ -508,12 +500,8 @@
                 },
                 "updatedAt": {
                   "codecId": "pg/timestamptz-temporal@1",
-                  "default": {
-                    "expression": "now()",
-                    "kind": "function"
-                  },
                   "nativeType": "timestamptz",
-                  "nullable": true
+                  "nullable": false
                 }
               },
               "foreignKeys": [],
@@ -550,10 +538,10 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "2d0b8d9ce62334a1dec4b1cead43fba21628b4b34933b14eb6df0ab0f58a86b4"
+    "storageHash": "4dd2bfa90ab831b3c4d420e7b5aa9ecf3b799a4d18a7b157d950181ed9316035"
   },
   "execution": {
-    "executionHash": "045262be4507d7a05bcdc16e1a60a4ec8dfc1baaba49c5d5c665499e138a294a",
+    "executionHash": "a39716bbf2e94aa7a9a40ced10a975a5a0960efb57764836dca7214625b72ae2",
     "mutations": {
       "defaults": [
         {
@@ -564,6 +552,21 @@
           "ref": {
             "entry": "sessions",
             "field": "id",
+            "namespace": "public"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "instantNow",
+            "kind": "generator"
+          },
+          "onUpdate": {
+            "id": "instantNow",
+            "kind": "generator"
+          },
+          "ref": {
+            "entry": "sessions",
+            "field": "updatedAt",
             "namespace": "public"
           }
         },
@@ -580,12 +583,42 @@
         },
         {
           "onCreate": {
+            "id": "instantNow",
+            "kind": "generator"
+          },
+          "onUpdate": {
+            "id": "instantNow",
+            "kind": "generator"
+          },
+          "ref": {
+            "entry": "temporary_tasks",
+            "field": "updatedAt",
+            "namespace": "public"
+          }
+        },
+        {
+          "onCreate": {
             "id": "ulid",
             "kind": "generator"
           },
           "ref": {
             "entry": "users",
             "field": "id",
+            "namespace": "public"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "instantNow",
+            "kind": "generator"
+          },
+          "onUpdate": {
+            "id": "instantNow",
+            "kind": "generator"
+          },
+          "ref": {
+            "entry": "users",
+            "field": "updatedAt",
             "namespace": "public"
           }
         }

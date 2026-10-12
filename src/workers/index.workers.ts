@@ -1,5 +1,7 @@
+import z from 'zod';
 import type { QueueJob } from '#interfaces/queue.interface.js';
-import type { JobPayload, JobType, JobWorker } from '#types/jobs.types.js';
+import type { JobType, JobWorker } from '#types/jobs.types.js';
+import { jobPayloadSchema } from '#validationSchemas/jobs/jobPayload.schema.js';
 import { buildWorker } from '#workers/build.worker.js';
 import { emailWorker } from '#workers/email.worker.js';
 
@@ -9,13 +11,17 @@ const workers: { [K in JobType]: JobWorker<K> } = {
   build: buildWorker,
 };
 
-/** Handler for the shared jobs queue: routes each job to the worker for its `type`. */
-export async function dispatchJob(job: QueueJob<JobPayload>): Promise<void> {
-  const { type, data } = job.data;
-  // Indexing by a runtime value: an unknown type (e.g. a job enqueued by a newer deploy) is undefined.
-  const worker = workers[type] as JobWorker<JobType> | undefined;
-  if (!worker) {
-    throw new Error(`No worker registered for job type "${type}"`);
+/**
+ * Handler for the shared jobs queue: validates the payload, then routes it to the worker for its `type`.
+ * Job data comes from Redis (possibly enqueued by another deploy), so it is untrusted until parsed.
+ */
+export async function dispatchJob(job: QueueJob<unknown>): Promise<void> {
+  const parsed = jobPayloadSchema.safeParse(job.data);
+  if (!parsed.success) {
+    throw new Error(`Invalid payload for job ${job.id}: ${z.prettifyError(parsed.error)}`);
   }
+  const { type, data } = parsed.data;
+  // Validated above; the cast only bridges TypeScript's lack of correlated-union narrowing.
+  const worker = workers[type] as JobWorker<JobType>;
   await worker({ ...job, data });
 }

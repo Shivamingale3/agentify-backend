@@ -13,6 +13,7 @@ Node 24 (ESM, NodeNext) · TypeScript strict · Express 5 · Prisma 8 RC (`@pris
 - Dev: `npm run dev` (API) · `npm run dev:worker` (BullMQ worker)
 - After editing `src/prisma/contract.prisma`: `npm run prisma:generate`, then `npm run typecheck`
 - If `node`/`npm` is not found, the shell didn't load nvm: run `. ~/.nvm/nvm.sh && nvm use`. Do not install or switch Node versions.
+- If you are writing some code and a parameter or a function states its depricated then don't use it, never, find its alternative and use it.
 
 ## Prisma 8: this is NOT Prisma 7
 

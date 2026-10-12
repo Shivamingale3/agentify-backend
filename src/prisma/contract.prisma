@@ -9,7 +9,7 @@ model User {
   emailVerified Boolean   @default(false)
   password      String
   createdAt     DateTime? @default(now())
-  updatedAt     DateTime? @default(now())
+  updatedAt     temporal.updatedAt()
 
   @@map("users")
 }
@@ -20,7 +20,7 @@ model TemporaryTasks {
   token     String            @unique
   taskData  Json
   createdAt DateTime          @default(now())
-  updatedAt DateTime          @default(now())
+  updatedAt temporal.updatedAt()
 
   @@map("temporary_tasks")
 }
@@ -31,7 +31,7 @@ model Session {
   user      User      @relation(fields: [userId], references: [id])
   token     String
   createdAt DateTime? @default(now())
-  updatedAt DateTime? @default(now())
+  updatedAt temporal.updatedAt()
 
   @@map("sessions")
 }
