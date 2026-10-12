@@ -5,7 +5,7 @@ import type { EmailVerificationTask, RegisterDto } from '#types/auth.types.js';
 import { isUniqueViolation } from '#utils/errorGuards.js';
 import * as bcrypt from 'bcrypt';
 import type { CreateInput } from '@prisma/orm-postgres/orm-client';
-import { type Contract, type Models } from '#prisma/contract.js';
+import type { Contract, Models } from '#prisma/contract.js';
 import userService from '#services/user.service.js';
 import { logger } from '#utils/logger.js';
 import queueService from '#services/queue.service.js';

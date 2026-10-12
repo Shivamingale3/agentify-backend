@@ -1,4 +1,4 @@
-import { type NextFunction, type Request, type Response } from 'express';
+import type { NextFunction, Request, Response } from 'express';
 import { ZodError, type z } from 'zod';
 import { HttpException } from '#exceptions/http.exception.js';
 

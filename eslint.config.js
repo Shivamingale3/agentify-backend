@@ -63,6 +63,9 @@ export default tseslint.config(
           fixStyle: 'inline-type-imports',
         },
       ],
+      // `import { type A }` still emits `import {} from '...'` under verbatimModuleSyntax,
+      // which crashes at runtime for type-only modules like #prisma/contract.js.
+      '@typescript-eslint/no-import-type-side-effects': 'error',
       'no-restricted-imports': [
         'error',
         {
@@ -88,7 +91,7 @@ export default tseslint.config(
   // project. Trade-off: type-checked linting rules don't apply to test files,
   // which is fine — they're exercised via `tsc --noEmit -p tsconfig.test.json`.
   {
-    files: ['tests/**/*.test.ts'],
+    files: ['tests/**/*.ts', 'vitest.config.ts'],
     extends: [...tseslint.configs.recommended, vitestPlugin.configs.recommended],
     rules: {
       'no-console': 'off',

@@ -18,6 +18,8 @@ const prodFormat = combine(timestamp(), errors({ stack: true }), json());
 
 export const logger = winston.createLogger({
   level: env.APP_ENV === 'development' ? 'debug' : 'info',
+  // Keep test output readable; set LOG_IN_TESTS=1 to debug a failing test.
+  silent: env.APP_ENV === 'test' && !process.env['LOG_IN_TESTS'],
   format: env.APP_ENV === 'development' ? devFormat : prodFormat,
   transports: [new winston.transports.Console()],
 });

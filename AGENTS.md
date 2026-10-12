@@ -7,8 +7,9 @@ Node 24 (ESM, NodeNext) · TypeScript strict · Express 5 · Prisma 8 RC (`@pris
 ## Commands
 
 - **Definition of done:** `npm run check && npm test` passes. Paste the output; "should work" is not done.
-- Typecheck `npm run typecheck` · Lint `npm run lint` (`lint:fix` to autofix) · Format `npm run format`
-- Single test: `npx vitest run tests/path/file.test.ts`
+- Typecheck `npm run typecheck` (src + tests) · Lint `npm run lint` (`lint:fix` to autofix) · Format `npm run format`
+- Tests: `npm run test:unit` (no Docker, ~1s) · `npm run test:integration` (needs Docker) · single file `npx vitest run tests/path/file.test.ts`
+- If Docker isn't available, say so and report the unit results; don't skip or stub integration tests.
 - Dev: `npm run dev` (API) · `npm run dev:worker` (BullMQ worker)
 - After editing `src/prisma/contract.prisma`: `npm run prisma:generate`, then `npm run typecheck`
 - If `node`/`npm` is not found, the shell didn't load nvm: run `. ~/.nvm/nvm.sh && nvm use`. Do not install or switch Node versions.
@@ -17,16 +18,16 @@ Node 24 (ESM, NodeNext) · TypeScript strict · Express 5 · Prisma 8 RC (`@pris
 
 **Before any DB task, read `node_modules/@prisma/orm-postgres/skills/prisma-8/SKILL.md`** and the reference it routes to. It matches the installed version; trust it over memory.
 
-| Prisma 7 (never use)                              | Prisma 8 (this repo)                                                               |
-| ------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| `@prisma/client`, `PrismaClient`, `schema.prisma` | `db` / `dbInstance` from `#providers/db.provider.js`, `src/prisma/contract.prisma` |
-| `findUnique` / `findFirst`                        | `db.public.User.first({ email })` or `.where({ id }).first()`                      |
-| `findMany`                                        | `.where({...}).all().toArray()` (or `for await` to stream)                         |
-| `$transaction`                                    | `dbInstance.transaction(async (tx) => { ... tx.orm ... })`                         |
-| `$queryRaw` / `$executeRaw`                       | `dbInstance.raw.sql\`... ${value}\`` (values are bound params)                     |
-| `P2002` error code                                | `isUniqueViolation(error)` from `#utils/errorGuards.js` (SQLSTATE `23505`)         |
-| `prisma generate`, `migrate dev/deploy/reset`     | `prisma contract emit`, `prisma migration plan`, `prisma db migrate`               |
-| generated TS `enum` objects                       | type: `Models.public_X['field']`; values: `dbInstance.enums.public.X.values`       |
+| Prisma 7 (never use)                              | Prisma 8 (this repo)                                                                                                                |
+| ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `@prisma/client`, `PrismaClient`, `schema.prisma` | `db` / `dbInstance` from `#providers/db.provider.js`, `src/prisma/contract.prisma`                                                  |
+| `findUnique` / `findFirst`                        | `db.public.User.first({ email })` or `.where({ id }).first()`                                                                       |
+| `findMany`                                        | `.where({...}).all().toArray()` (or `for await` to stream)                                                                          |
+| `$transaction`                                    | `dbInstance.transaction(async (tx) => { ... tx.orm ... })`                                                                          |
+| `$queryRaw` / `$executeRaw`                       | `dbInstance.runtime().execute(dbInstance.raw.sql\`...${v}\`.affectedCount().build())`; rows: `.returnsRow({...})`+`runtime().query` |
+| `P2002` error code                                | `isUniqueViolation(error)` from `#utils/errorGuards.js` (SQLSTATE `23505`)                                                          |
+| `prisma generate`, `migrate dev/deploy/reset`     | `prisma contract emit`, `prisma migration plan`, `prisma db migrate`                                                                |
+| generated TS `enum` objects                       | type: `Models.public_X['field']`; values: `dbInstance.enums.public.X.values`                                                        |
 
 - Models are namespaced: `db.public.User`, never `db.User`.
 - `update()` / `delete()` require a prior `.where(...)` and return the row or `null`.
@@ -65,9 +66,22 @@ ESLint (`strictTypeChecked`) and `tsconfig.json` are authoritative. Fix the code
 
 ## Tests
 
-- Vitest; files in `tests/**/*.test.ts`. Every bug fix gets a regression test.
-- Unit-test services by injecting a fake `Orm` or `vi.mock`-ing modules; test DB behaviour against a real Postgres, not mocked query chains.
-- Never delete, `.skip`, `.only` or weaken an assertion to make a test pass.
+Vitest with two projects in `vitest.config.ts`. Mirror `src/` paths: `src/services/x.ts` → `tests/unit/services/x.test.ts`.
+
+|         | Unit (`tests/unit/**`)                                                                          | Integration (`tests/integration/**`)                                                           |
+| ------- | ----------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| Tests   | One module's logic: branches, errors, edge cases                                                | Real SQL, constraints, transactions, Redis, HTTP routes                                        |
+| I/O     | None. `vi.mock` every `#services/*` / `#providers/*` the module imports, or inject a fake `Orm` | Real Postgres + Redis from Testcontainers (`globalSetup.ts`); mail never sent (no worker runs) |
+| Example | `tests/unit/services/auth.service.test.ts`                                                      | `tests/integration/auth.test.ts` (supertest on `app`)                                          |
+
+- Env comes from `vitest.config.ts` (`testEnv`), never `.env`. Service URLs point at port 1, so a unit test that forgets a mock fails fast. New required env vars must be added to `testEnv` too.
+- Integration: `setup.ts` truncates all `public` tables and flushes Redis before **every** test. Create the data each test needs inside that test; never rely on order or on data from another test. Files run serially.
+- Import app code statically in test files (env is set before they load). Only `tests/integration/setup.ts` needs dynamic imports.
+- Assert on outcomes (DB rows, HTTP status/body, calls to mocked boundaries), not on internals. Test DB behaviour against the real DB, never by mocking `where().first()` chains.
+- Every bug fix gets a regression test that fails without the fix.
+- Mocks reset automatically between tests (`mockReset`); set return values in each test or `beforeEach`.
+- Debug noisy failures with `LOG_IN_TESTS=1 npx vitest run ...` (the logger is silent under `APP_ENV=test`).
+- Never delete, `.skip`, `.only` or weaken an assertion to make a test pass. Never point tests at a non-container database.
 
 ## Boundaries
 
