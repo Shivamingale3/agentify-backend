@@ -1,0 +1,109 @@
+import type { CreateInput } from '@prisma/orm-postgres/orm-client';
+import { describe, expect, it } from 'vitest';
+import type { Contract } from '#prisma/contract.js';
+import { db, dbInstance } from '#providers/db.provider.js';
+import userService from '#services/user.service.js';
+import { isUniqueViolation } from '#utils/errorGuards.js';
+
+function userInput(
+  overrides: Partial<CreateInput<Contract, 'User'>> = {},
+): CreateInput<Contract, 'User'> {
+  return {
+    firstName: 'Jane',
+    lastName: null,
+    countryCode: null,
+    mobile: null,
+    email: 'jane@example.com',
+    emailVerified: false,
+    password: 'hashed',
+    ...overrides,
+  };
+}
+
+describe('userService (real Postgres)', () => {
+  it('creates a user with DB defaults and reads it back by id', async () => {
+    const created = await userService.createUser(userInput());
+
+    expect(created.id).toBeTypeOf('string');
+    expect(created).toMatchObject({ email: 'jane@example.com', emailVerified: false });
+    expect(created.createdAt).not.toBeNull();
+    expect(await userService.getUserById(created.id)).toMatchObject({
+      id: created.id,
+      email: 'jane@example.com',
+    });
+  });
+
+  it('returns null when getting a missing user', async () => {
+    expect(await userService.getUserById('does-not-exist')).toBeNull();
+  });
+
+  it('updates a user and returns the updated row', async () => {
+    const created = await userService.createUser(userInput());
+
+    const updated = await userService.updateUser({
+      userId: created.id,
+      userData: { emailVerified: true, lastName: 'Doe' },
+    });
+
+    expect(updated).toMatchObject({ id: created.id, emailVerified: true, lastName: 'Doe' });
+    expect(await db.public.User.first({ id: created.id })).toMatchObject({ emailVerified: true });
+  });
+
+  it('returns null when updating a missing user', async () => {
+    expect(
+      await userService.updateUser({ userId: 'does-not-exist', userData: { emailVerified: true } }),
+    ).toBeNull();
+  });
+
+  it('rejects a duplicate email with a unique violation', async () => {
+    await userService.createUser(userInput());
+
+    const error: unknown = await userService.createUser(userInput()).catch((e: unknown) => e);
+
+    expect(isUniqueViolation(error)).toBe(true);
+    expect(await db.public.User.all().toArray()).toHaveLength(1);
+  });
+
+  it('rejects a duplicate mobile with a unique violation', async () => {
+    await userService.createUser(userInput({ mobile: '9999999999', countryCode: '+91' }));
+
+    const error: unknown = await userService
+      .createUser(
+        userInput({ email: 'other@example.com', mobile: '9999999999', countryCode: '+91' }),
+      )
+      .catch((e: unknown) => e);
+
+    expect(isUniqueViolation(error)).toBe(true);
+  });
+
+  it('allows several users without a mobile (NULLs are not unique-conflicting)', async () => {
+    await userService.createUser(userInput());
+    await userService.createUser(userInput({ email: 'other@example.com' }));
+
+    expect(await db.public.User.all().toArray()).toHaveLength(2);
+  });
+
+  it('rolls back writes made with tx.orm when the transaction callback throws', async () => {
+    await expect(
+      dbInstance.transaction(async (tx) => {
+        const user = await userService.createUser(userInput(), tx.orm);
+        await userService.updateUser(
+          { userId: user.id, userData: { emailVerified: true } },
+          tx.orm,
+        );
+        throw new Error('boom');
+      }),
+    ).rejects.toThrow('boom');
+
+    expect(await db.public.User.all().toArray()).toHaveLength(0);
+  });
+
+  it('commits writes made with tx.orm when the callback succeeds', async () => {
+    const id = await dbInstance.transaction(async (tx) => {
+      const user = await userService.createUser(userInput(), tx.orm);
+      return user.id;
+    });
+
+    expect(await userService.getUserById(id)).not.toBeNull();
+  });
+});

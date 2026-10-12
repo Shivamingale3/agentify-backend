@@ -2,6 +2,8 @@ import { StatusCodes } from 'http-status-codes';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { HttpException } from '#exceptions/http.exception.js';
 import type { Models } from '#prisma/contract.js';
+import { dbInstance } from '#providers/db.provider.js';
+import { env } from '#providers/env.provider.js';
 import authService from '#services/auth.service.js';
 import cacheService from '#services/cache.service.js';
 import queueService from '#services/queue.service.js';
@@ -79,6 +81,72 @@ describe('AuthService.register', () => {
     );
     expect(queueService.enqueueJob).not.toHaveBeenCalled();
   });
+
+  it('copies optional profile fields, and the phone only when both parts are present', async () => {
+    await authService.register({
+      email: user.email,
+      password: 'Passw0rd!',
+      firstName: 'Ada',
+      lastName: 'Lovelace',
+      countryCode: '+44',
+      mobile: '7000000000',
+    });
+    await authService.register({ email: user.email, password: 'Passw0rd!', mobile: '7000000000' });
+
+    const calls = vi.mocked(userService.createUser).mock.calls;
+    const full = calls[0]?.[0];
+    const partial = calls[1]?.[0];
+    expect(full).toMatchObject({
+      firstName: 'Ada',
+      lastName: 'Lovelace',
+      countryCode: '+44',
+      mobile: '7000000000',
+    });
+    expect(partial).toMatchObject({
+      firstName: null,
+      lastName: null,
+      countryCode: null,
+      mobile: null,
+    });
+  });
+
+  it('stores one random token in the task, the cache and the emailed link', async () => {
+    await authService.register({ email: user.email, password: 'Passw0rd!' });
+
+    const [taskArg] = vi.mocked(temporaryTaskService.createTask).mock.calls[0] ?? [];
+    const token = taskArg?.data.token ?? '';
+    expect(token).toMatch(/^[0-9a-f]{64}$/);
+    expect(taskArg?.data).toMatchObject({
+      taskType: 'EMAIL_VERIFICATION',
+      taskData: { token, email: user.email, userId: user.id },
+    });
+    expect(cacheService.set).toHaveBeenCalledWith(
+      token,
+      expect.objectContaining({ token, userId: user.id }),
+      60 * 60 * 1000,
+    );
+    const [job] = vi.mocked(queueService.enqueueJob).mock.calls[0] ?? [];
+    expect(job?.type === 'email' ? job.data.html : '').toContain(
+      `${env.FRONTEND_URL}/verify-email?token=${token}`,
+    );
+  });
+
+  it('rethrows non-unique errors unchanged and sends nothing', async () => {
+    const error = new Error('db down');
+    vi.mocked(temporaryTaskService.createTask).mockRejectedValue(error);
+
+    await expect(authService.register({ email: user.email, password: 'Passw0rd!' })).rejects.toBe(
+      error,
+    );
+    expect(cacheService.set).not.toHaveBeenCalled();
+    expect(queueService.enqueueJob).not.toHaveBeenCalled();
+  });
+
+  it('runs the user and task writes in one transaction', async () => {
+    await authService.register({ email: user.email, password: 'Passw0rd!' });
+
+    expect(dbInstance.transaction).toHaveBeenCalledOnce();
+  });
 });
 
 describe('AuthService.verifyEmail', () => {
@@ -133,5 +201,41 @@ describe('AuthService.verifyEmail', () => {
 
     await expectHttpError(authService.verifyEmail('tok'), StatusCodes.UNAUTHORIZED);
     expect(userService.updateUser).not.toHaveBeenCalled();
+  });
+
+  it('rejects a cached payload issued for a different token', async () => {
+    vi.mocked(cacheService.get).mockResolvedValue(payload({ token: 'other' }));
+
+    await expectHttpError(authService.verifyEmail('tok'), StatusCodes.UNAUTHORIZED);
+    expect(temporaryTaskService.deleteTaskByToken).not.toHaveBeenCalled();
+  });
+
+  it('rejects when the user no longer exists and keeps the cache entry', async () => {
+    vi.mocked(cacheService.get).mockResolvedValue(payload());
+    vi.mocked(temporaryTaskService.deleteTaskByToken).mockResolvedValue(task);
+    vi.mocked(userService.updateUser).mockResolvedValue(null);
+
+    await expectHttpError(authService.verifyEmail('tok'), StatusCodes.UNAUTHORIZED);
+    expect(cacheService.del).not.toHaveBeenCalled();
+  });
+
+  it('rejects a DB task whose data does not match the schema', async () => {
+    vi.mocked(cacheService.get).mockResolvedValue(null);
+    vi.mocked(temporaryTaskService.getTaskByToken).mockResolvedValue({
+      ...task,
+      taskData: { token: 'tok' },
+    });
+
+    await expect(authService.verifyEmail('tok')).rejects.toThrow();
+    expect(temporaryTaskService.deleteTaskByToken).not.toHaveBeenCalled();
+  });
+
+  it('rethrows unexpected errors unchanged', async () => {
+    const error = new Error('db down');
+    vi.mocked(cacheService.get).mockResolvedValue(payload());
+    vi.mocked(temporaryTaskService.deleteTaskByToken).mockRejectedValue(error);
+
+    await expect(authService.verifyEmail('tok')).rejects.toBe(error);
+    expect(cacheService.del).not.toHaveBeenCalled();
   });
 });
