@@ -10,3 +10,4 @@ export const dbInstance = postgres<Contract>({
 });
 
 export const db = dbInstance.orm;
+export type Orm = typeof db;

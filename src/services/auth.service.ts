@@ -10,11 +10,15 @@ import userService from '#services/user.service.js';
 import { logger } from '#utils/logger.js';
 import queueService from '#services/queue.service.js';
 import { env } from '#providers/env.provider.js';
+import { dbInstance, type Orm } from '#providers/db.provider.js';
 import temporaryTaskService from '#services/temporaryTask.service.js';
 import cacheService from '#services/cache.service.js';
 import { emailVerificationTemplate } from '#utils/emailTemplates.js';
 import { emailVerificationTaskSchema } from '#validationSchemas/auth/emailVerificationTask.schema.js';
 import z from 'zod';
+
+const EMAIL_VERIFICATION_TTL_MS = 60 * 60 * 1000;
+
 class AuthService {
   public async register(userData: RegisterDto): Promise<void> {
     try {
@@ -41,11 +45,13 @@ class AuthService {
         createUserPayload.mobile = userData.mobile;
       }
 
-      const user = await userService.createUser(createUserPayload);
-      if (!user) {
-        throw new HttpException(StatusCodes.INTERNAL_SERVER_ERROR, 'User creation failed');
-      }
-      await this.sendVerificationEmail(user);
+      // User + verification task commit together; a failure in either rolls both back.
+      const verification = await dbInstance.transaction(async (tx) => {
+        const user = await userService.createUser(createUserPayload, tx.orm);
+        return await this.createEmailVerificationTask(user, tx.orm);
+      });
+      // Cache and queue are not part of the DB transaction, so they run only after commit.
+      await this.sendVerificationEmail(verification);
     } catch (error) {
       if (isUniqueViolation(error)) {
         throw new HttpException(StatusCodes.CONFLICT, 'User already exists');
@@ -55,33 +61,28 @@ class AuthService {
     }
   }
 
-  private async hashPassword(password: string): Promise<string> {
-    return await bcrypt.hash(password, 10);
-  }
-
-  private async comparePasswords(plainPassword: string, hash: string): Promise<boolean> {
-    return await bcrypt.compare(plainPassword, hash);
-  }
-
-  private async sendVerificationEmail(user: Models.public_User): Promise<void> {
-    const verificationLink = await this.createEmailVerificationLink(user);
+  private async sendVerificationEmail(payload: EmailVerificationTask): Promise<void> {
+    await cacheService.set(payload.token, payload, EMAIL_VERIFICATION_TTL_MS);
+    const verificationLink = `${env.FRONTEND_URL}/verify-email?token=${payload.token}`;
 
     await queueService.enqueueJob({
       type: 'email',
       data: {
-        to: user.email,
+        to: payload.email,
         subject: 'Email Verification',
         text: 'Please verify your email',
-        html: emailVerificationTemplate(user.email, verificationLink),
+        html: emailVerificationTemplate(payload.email, verificationLink),
       },
     });
-    logger.info('Verification email queued for %s', user.email);
+    logger.info('Verification email queued for %s', payload.email);
   }
 
-  private async createEmailVerificationLink(user: Models.public_User): Promise<string> {
+  private async createEmailVerificationTask(
+    user: Models.public_User,
+    orm: Orm,
+  ): Promise<EmailVerificationTask> {
     const token = crypto.randomBytes(32).toString('hex');
-    const validity = 60 * 60 * 1000;
-    const expiresAt = new Date(Date.now() + validity);
+    const expiresAt = new Date(Date.now() + EMAIL_VERIFICATION_TTL_MS);
     const payload: EmailVerificationTask = {
       token,
       email: user.email,
@@ -93,9 +94,8 @@ class AuthService {
       taskData: payload,
       taskType: 'EMAIL_VERIFICATION',
     };
-    await temporaryTaskService.createTask({ data: task });
-    await cacheService.set(token, payload, validity);
-    return `${env.FRONTEND_URL}/verify-email?token=${token}`;
+    await temporaryTaskService.createTask({ data: task }, orm);
+    return payload;
   }
 
   public async verifyEmail(token: string): Promise<void> {
@@ -116,15 +116,22 @@ class AuthService {
         throw new HttpException(StatusCodes.UNAUTHORIZED, 'Token expired');
       }
 
-      const user = await userService.getUserById(payload.userId);
-
-      if (!user) {
-        throw new HttpException(StatusCodes.UNAUTHORIZED, 'Invalid token');
-      }
-
-      await userService.updateUser({ userId: user.id, userData: { emailVerified: true } });
-
-      await temporaryTaskService.deleteTaskByToken(payload.token);
+      const { userId } = payload;
+      await dbInstance.transaction(async (tx) => {
+        // Deleting first makes the token single-use: a concurrent request finds nothing and fails.
+        const task = await temporaryTaskService.deleteTaskByToken(token, tx.orm);
+        if (!task) {
+          throw new HttpException(StatusCodes.UNAUTHORIZED, 'Invalid token');
+        }
+        const user = await userService.updateUser(
+          { userId, userData: { emailVerified: true } },
+          tx.orm,
+        );
+        if (!user) {
+          throw new HttpException(StatusCodes.UNAUTHORIZED, 'Invalid token');
+        }
+      });
+      await cacheService.del(token);
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -133,6 +140,14 @@ class AuthService {
       throw error;
     }
   }
+
+  private async hashPassword(password: string): Promise<string> {
+    return await bcrypt.hash(password, 10);
+  }
+
+  // private async _comparePasswords(plainPassword: string, hash: string): Promise<boolean> {
+  //   return await bcrypt.compare(plainPassword, hash);
+  // }
 }
 
 const authService = new AuthService();

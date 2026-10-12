@@ -23,7 +23,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "test:typecheck": "tsc --noEmit -p tsconfig.test.json"
+    "test:typecheck": "tsc --noEmit -p tsconfig.test.json",
+    "prepare": "husky"
   },
   "keywords": [],
   "author": "",
@@ -69,6 +70,7 @@
     "@vitest/eslint-plugin": "^1.6.21",
     "eslint": "^10.6.0",
     "eslint-config-prettier": "^10.1.8",
+    "husky": "^9.1.7",
     "lint-staged": "^17.0.8",
     "prettier": "^3.9.4",
     "prisma": "^8.0.0-rc.19",
