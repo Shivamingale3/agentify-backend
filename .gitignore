@@ -24,3 +24,7 @@ Thumbs.db
 
 # Coverage
 coverage/
+
+
+# findings
+BUGS.md

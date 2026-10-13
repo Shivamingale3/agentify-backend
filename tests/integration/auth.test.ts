@@ -192,3 +192,21 @@ describe('authService.verifyEmail edge cases', () => {
     });
   });
 });
+
+describe('POST /api/auth/login', () => {
+  // Regression: the second login hit the unique userId on sessions and returned 500.
+  it('lets a verified user log in again, replacing their session', async () => {
+    await request(app).post('/api/auth/register').send(newUser).expect(200);
+    await db.public.User.where({ email: newUser.email }).update({ emailVerified: true });
+    const credentials = { email: newUser.email, password: newUser.password };
+
+    await request(app).post('/api/auth/login').send(credentials).expect(200);
+    const first = await db.public.Session.first();
+    await request(app).post('/api/auth/login').send(credentials).expect(200);
+
+    const sessions = await db.public.Session.all().toArray();
+    expect(sessions).toHaveLength(1);
+    expect(sessions[0]?.id).not.toBe(first?.id);
+    expect(sessions[0]?.token).not.toBe(first?.token);
+  });
+});
