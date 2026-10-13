@@ -21,6 +21,7 @@ const testEnv = {
   QUEUE_PORT: '1',
   QUEUE_PASS: 'test',
   WORKER_CONCURRENCY: '1',
+  JWT_SECRET: 'test-jwt-secret',
 };
 
 export default defineConfig({

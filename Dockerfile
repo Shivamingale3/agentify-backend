@@ -9,9 +9,9 @@ COPY package*.json ./
 RUN npm ci
 
 # Compile TypeScript (contract.json/.d.ts are committed, so no emit step needed)
-COPY tsconfig.json ./
+COPY tsconfig.json tsconfig.build.json ./
 COPY src ./src
-RUN npx tsc
+RUN npx tsc -p tsconfig.build.json
 
 # ---- runtime ----
 # Migrations are run manually against the DB, so the runtime image only needs

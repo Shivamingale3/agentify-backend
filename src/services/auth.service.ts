@@ -1,7 +1,13 @@
 import crypto from 'node:crypto';
 import { StatusCodes } from 'http-status-codes';
 import { HttpException } from '#exceptions/http.exception.js';
-import type { EmailVerificationTask, RegisterDto } from '#types/auth.types.js';
+import type {
+  AuthTokenPayload,
+  EmailVerificationTask,
+  LoginDto,
+  RefreshTokenPayload,
+  RegisterDto,
+} from '#types/auth.types.js';
 import { isUniqueViolation } from '#utils/errorGuards.js';
 import * as bcrypt from 'bcrypt';
 import type { CreateInput } from '@prisma/orm-postgres/orm-client';
@@ -16,10 +22,40 @@ import cacheService from '#services/cache.service.js';
 import { emailVerificationTemplate } from '#utils/emailTemplates.js';
 import { emailVerificationTaskSchema } from '#validationSchemas/auth/emailVerificationTask.schema.js';
 import z from 'zod';
+import jwtService from '#services/jwt.service.js';
+import type { ExtraDeviceHeaders } from '#types/auth.types.js';
+import sessionService from '#services/session.service.js';
+import { ulid } from 'ulid';
 
 const EMAIL_VERIFICATION_TTL_MS = 60 * 60 * 1000;
 
 class AuthService {
+  public async login(
+    userData: LoginDto,
+    deviceHeaders: ExtraDeviceHeaders,
+  ): Promise<{ authToken: string; refreshToken: string }> {
+    try {
+      const tokens = await dbInstance.transaction(async (tx) => {
+        const user = await userService.getUserByEmail(userData.email, tx.orm);
+        if (!user) {
+          throw new HttpException(StatusCodes.UNAUTHORIZED, 'User not found');
+        }
+        if (!user.emailVerified) {
+          throw new HttpException(StatusCodes.UNAUTHORIZED, 'Email not verified');
+        }
+        await this.verifyPassword(userData.password, user.password);
+        return await this.getTokensPostAuthentication(user, deviceHeaders, tx.orm);
+      });
+      return tokens;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      logger.error('Login failed for user %s', userData.email, { error });
+      throw error;
+    }
+  }
+
   public async register(userData: RegisterDto): Promise<void> {
     try {
       const hashedPassword = await this.hashPassword(userData.password);
@@ -59,6 +95,41 @@ class AuthService {
       logger.error('Registration failed for user %s', userData.email, { error });
       throw error;
     }
+  }
+
+  public async clearSession(userId: string, sessionId: string): Promise<void> {
+    await cacheService.del(sessionId);
+    await sessionService.deleteSessionByUserId(userId);
+  }
+
+  public async getTokensPostAuthentication(
+    user: Models.public_User,
+    deviceHeaders: ExtraDeviceHeaders,
+    orm: Orm,
+  ): Promise<{ authToken: string; refreshToken: string }> {
+    const sessionId = ulid();
+    const authToken = jwtService.generateToken<AuthTokenPayload>(
+      { email: user.email, userId: user.id, sessionId },
+      env.AUTH_EXPIRY,
+    );
+
+    const refreshToken = jwtService.generateToken<RefreshTokenPayload>(
+      {
+        userId: user.id,
+        sessionId,
+      },
+      env.REFRESH_EXPIRY,
+    );
+    const sessionData = {
+      clientType: deviceHeaders['x-client-type'] ?? 'Unknown',
+      clientName: deviceHeaders['x-client-name'] ?? 'Unknown',
+      token: refreshToken,
+      id: sessionId,
+      userId: user.id,
+    };
+    const session = await sessionService.createSession(sessionData, orm);
+    await cacheService.set(sessionId, session);
+    return { authToken, refreshToken };
   }
 
   private async sendVerificationEmail(payload: EmailVerificationTask): Promise<void> {
@@ -149,9 +220,11 @@ class AuthService {
     return await bcrypt.hash(password, 10);
   }
 
-  // private async _comparePasswords(plainPassword: string, hash: string): Promise<boolean> {
-  //   return await bcrypt.compare(plainPassword, hash);
-  // }
+  private async verifyPassword(plainPassword: string, hash: string): Promise<void> {
+    if (!(await bcrypt.compare(plainPassword, hash))) {
+      throw new HttpException(StatusCodes.UNAUTHORIZED, 'Invalid credentials');
+    }
+  }
 }
 
 const authService = new AuthService();

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { envSchema } from '#validationSchemas/env.schema.js';
+import envSchema from '#validationSchemas/env.schema.js';
+import type z from 'zod';
 
 const base = {
   APP_PORT: '5999',
@@ -19,6 +20,7 @@ const base = {
   QUEUE_PORT: '6379',
   QUEUE_PASS: 'secret',
   WORKER_CONCURRENCY: '3',
+  JWT_SECRET: 'secret',
 };
 
 type EnvInput = Partial<Record<keyof typeof base, string | undefined>>;
@@ -29,7 +31,7 @@ function parse(overrides: EnvInput): ReturnType<typeof envSchema.safeParse> {
 
 function messages(overrides: EnvInput): string[] {
   const result = parse(overrides);
-  return result.success ? [] : result.error.issues.map((issue) => issue.message);
+  return result.success ? [] : result.error.issues.map((issue: z.core.$ZodIssue) => issue.message);
 }
 
 describe('envSchema', () => {

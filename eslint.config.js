@@ -87,9 +87,9 @@ export default tseslint.config(
   },
 
   // Test files (permissive — testing may use console, any, etc.)
-  // No projectService here so test files don't need to be in any tsconfig
-  // project. Trade-off: type-checked linting rules don't apply to test files,
-  // which is fine — they're exercised via `tsc --noEmit -p tsconfig.test.json`.
+  // No projectService here, so type-checked lint rules stay off for tests.
+  // Tests are still type-checked by `npm run typecheck` (tsconfig.json
+  // includes tests/).
   {
     files: ['tests/**/*.ts', 'vitest.config.ts'],
     extends: [...tseslint.configs.recommended, vitestPlugin.configs.recommended],

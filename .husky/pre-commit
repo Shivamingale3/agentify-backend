@@ -9,6 +9,6 @@ command -v node >/dev/null 2>&1 || { echo "pre-commit: node not found (install n
 # Binaries from node_modules/.bin directly: no npx startup cost, no reliance on a global npm.
 ./node_modules/.bin/lint-staged
 # ponytail: tsc checks the working tree, not just staged content; fine unless you commit partial hunks.
-./node_modules/.bin/tsc --noEmit -p tsconfig.test.json
+./node_modules/.bin/tsc
 # Unit tests only (~1s, no Docker). Integration tests need Docker: run `npm run test:integration`.
 ./node_modules/.bin/vitest run --project unit

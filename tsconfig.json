@@ -5,8 +5,9 @@
     "moduleResolution": "nodenext",
     // "development" resolves #* imports to ./src (see package.json "imports"); runtime uses ./dist
     "customConditions": ["development"],
-    "rootDir": "./src",
-    "outDir": "./dist",
+    // Editor + `npm run typecheck` config: covers app, tests and tooling. The build uses tsconfig.build.json.
+    "rootDir": ".",
+    "noEmit": true,
 
     "strict": true,
     "noImplicitAny": true,
@@ -25,12 +26,8 @@
     "verbatimModuleSyntax": true,
     "skipLibCheck": true,
 
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
-
     "types": ["node"]
   },
-  "include": ["src"],
+  "include": ["src", "tests", "vitest.config.ts"],
   "exclude": ["node_modules", "dist"]
 }

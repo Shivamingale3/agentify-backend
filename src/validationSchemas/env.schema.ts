@@ -4,14 +4,14 @@ import z from 'zod';
 const requiredString = (name: string): z.ZodString =>
   z.string({ error: `${name} is required` }).min(1, `${name} is required`);
 
-const requiredPort = (name: string): z.ZodCoercedNumber =>
+const requiredNumber = (name: string): z.ZodCoercedNumber =>
   z.coerce
     .number({ error: `${name} must be a number` })
     .int(`${name} must be an integer`)
     .positive(`${name} is required`);
 
-export const envSchema = z.object({
-  APP_PORT: requiredPort('APP_PORT').default(5000),
+const envSchema = z.object({
+  APP_PORT: requiredNumber('APP_PORT').default(5000),
   APP_ENV: z.enum(['development', 'test', 'production'], {
     error: 'APP_ENV is required and must be development, test or production',
   }),
@@ -41,31 +41,32 @@ export const envSchema = z.object({
     .transform((origins) => origins.map((origin) => new URL(origin).origin)),
   DATABASE_URL: requiredString('DATABASE_URL'),
   EMAIL_HOST: requiredString('EMAIL_HOST'),
-  EMAIL_PORT: requiredPort('EMAIL_PORT'),
+  EMAIL_PORT: requiredNumber('EMAIL_PORT'),
   EMAIL_FROM: requiredString('EMAIL_FROM'),
   EMAIL_USER: requiredString('EMAIL_USER'),
   EMAIL_PASSWORD: requiredString('EMAIL_PASSWORD'),
   CACHE_URL: requiredString('CACHE_URL'),
   CACHE_PASS: requiredString('CACHE_PASS'),
   QUEUE_HOST: requiredString('QUEUE_HOST'),
-  QUEUE_PORT: requiredPort('QUEUE_PORT'),
+  QUEUE_PORT: requiredNumber('QUEUE_PORT'),
   QUEUE_PASS: requiredString('QUEUE_PASS'),
   // Jobs each worker process runs in parallel. Spawn more processes to scale out.
-  WORKER_CONCURRENCY: requiredPort('WORKER_CONCURRENCY').default(5),
+  WORKER_CONCURRENCY: requiredNumber('WORKER_CONCURRENCY').default(5),
+  JWT_ACCESS_TOKEN_EXPIRY: z.coerce
+    .number({ error: 'JWT_ACCESS_TOKEN_EXPIRY must be a number' })
+    .int()
+    .positive()
+    .default(600),
+  JWT_REFRESH_TOKEN_EXPIRY: z.coerce
+    .number({ error: 'JWT_REFRESH_TOKEN_EXPIRY must be a number' })
+    .int()
+    .positive()
+    .default(86400),
+  JWT_SECRET: requiredString('JWT_SECRET'),
+  AUTH_COOKIE_NAME: z.string().default('c_auth_value'),
+  REFRESH_COOKIE_NAME: z.string().default('c_refresh_value'),
+  REFRESH_EXPIRY: requiredNumber('REFRESH_EXPIRY').default(86400),
+  AUTH_EXPIRY: requiredNumber('AUTH_EXPIRY').default(600),
 });
-// .superRefine((val, ctx) => {
-//   if (val.AI_PROVIDER === 'groq' && !val.GROQ_API_KEY) {
-//     ctx.addIssue({
-//       code: 'custom',
-//       message: 'GROQ_API_KEY is required when AI_PROVIDER=groq',
-//       path: ['GROQ_API_KEY'],
-//     });
-//   }
-//   if (val.AI_PROVIDER === 'gemini' && !val.GEMINI_API_KEY) {
-//     ctx.addIssue({
-//       code: 'custom',
-//       message: 'GEMINI_API_KEY is required when AI_PROVIDER=gemini',
-//       path: ['GEMINI_API_KEY'],
-//     });
-//   }
-// });
+export { envSchema };
+export default envSchema;

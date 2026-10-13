@@ -1,25 +1,25 @@
 // use prisma-8
 model User {
-  id            String    @id @default(ulid())
+  id            String               @id @default(ulid())
   firstName     String?
   lastName      String?
   countryCode   String?
-  mobile        String?   @unique
-  email         String    @unique
-  emailVerified Boolean   @default(false)
+  mobile        String?              @unique
+  email         String               @unique
+  emailVerified Boolean              @default(false)
   password      String
-  createdAt     DateTime? @default(now())
+  createdAt     DateTime?            @default(now())
   updatedAt     temporal.updatedAt()
 
   @@map("users")
 }
 
 model TemporaryTasks {
-  id        String            @id @default(ulid())
-  taskType  TemporaryTaskType @default(EMAIL_VERIFICATION)
-  token     String            @unique
+  id        String               @id @default(ulid())
+  taskType  TemporaryTaskType    @default(EMAIL_VERIFICATION)
+  token     String               @unique
   taskData  Json
-  createdAt DateTime          @default(now())
+  createdAt DateTime             @default(now())
   updatedAt temporal.updatedAt()
   expiresAt DateTime
 
@@ -29,12 +29,14 @@ model TemporaryTasks {
 }
 
 model Session {
-  id        String    @id @default(ulid())
-  userId    String
-  user      User      @relation(fields: [userId], references: [id])
-  token     String
-  createdAt DateTime? @default(now())
-  updatedAt temporal.updatedAt()
+  id         String               @id
+  userId     String               @unique
+  user       User                 @relation(fields: [userId], references: [id])
+  token      String
+  clientName String?
+  clientType String?
+  createdAt  DateTime?            @default(now())
+  updatedAt  temporal.updatedAt()
 
   @@map("sessions")
 }

@@ -34,9 +34,9 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'bd580deca50020410750609a7c404e97af5d49d844afe484bcd4fdb9dd0f6d0d'>;
+  StorageHashBase<'fe783d52d9e33803ef96277032b9d8baaf54e202ab195301ce332a5332908f45'>;
 export type ExecutionHash =
-  ExecutionHashBase<'a39716bbf2e94aa7a9a40ced10a975a5a0960efb57764836dca7214625b72ae2'>;
+  ExecutionHashBase<'e3c825f737c791281249edc4e1a9883f93a3297a6a54a5536b003e90f53f4b1e'>;
 export type ProfileHash =
   ProfileHashBase<'3916f444a8a17ad749191acf9e08dad97d1a327b88c2f1d45d12f240296aa8b2'>;
 
@@ -251,6 +251,8 @@ type DefaultLiteralValue<CodecId extends string, Encoded> = CodecId extends keyo
 export type FieldOutputTypes = {
   readonly public: {
     readonly Session: {
+      readonly clientName: CodecTypes['pg/text@1']['output'] | null;
+      readonly clientType: CodecTypes['pg/text@1']['output'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
       readonly id: CodecTypes['pg/text@1']['output'];
       readonly token: CodecTypes['pg/text@1']['output'];
@@ -283,6 +285,8 @@ export type FieldOutputTypes = {
 export type FieldInputTypes = {
   readonly public: {
     readonly Session: {
+      readonly clientName: CodecTypes['pg/text@1']['input'] | null;
+      readonly clientType: CodecTypes['pg/text@1']['input'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['input'] | null;
       readonly id: CodecTypes['pg/text@1']['input'];
       readonly token: CodecTypes['pg/text@1']['input'];
@@ -315,6 +319,8 @@ export type FieldInputTypes = {
 export type StorageColumnTypes = {
   readonly public: {
     readonly sessions: {
+      readonly clientName: CodecTypes['pg/text@1']['output'] | null;
+      readonly clientType: CodecTypes['pg/text@1']['output'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
       readonly id: CodecTypes['pg/text@1']['output'];
       readonly token: CodecTypes['pg/text@1']['output'];
@@ -347,6 +353,8 @@ export type StorageColumnTypes = {
 export type StorageColumnInputTypes = {
   readonly public: {
     readonly sessions: {
+      readonly clientName: CodecTypes['pg/text@1']['input'] | null;
+      readonly clientType: CodecTypes['pg/text@1']['input'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['input'] | null;
       readonly id: CodecTypes['pg/text@1']['input'];
       readonly token: CodecTypes['pg/text@1']['input'];
@@ -379,6 +387,8 @@ export type StorageColumnInputTypes = {
 
 export namespace Models {
   export type public_Session = {
+    clientName: CodecTypes['pg/text@1']['output'] | null;
+    clientType: CodecTypes['pg/text@1']['output'] | null;
     createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
     id: CodecTypes['pg/text@1']['output'];
     token: CodecTypes['pg/text@1']['output'];
@@ -440,6 +450,16 @@ type ContractBase = Omit<
           readonly table: {
             readonly sessions: {
               columns: {
+                readonly clientName: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly clientType: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
                 readonly createdAt: {
                   readonly nativeType: 'timestamptz';
                   readonly codecId: 'pg/timestamptz-temporal@1';
@@ -468,15 +488,8 @@ type ContractBase = Omit<
                 };
               };
               primaryKey: { readonly columns: readonly ['id'] };
-              uniques: readonly [];
-              indexes: readonly [
-                {
-                  readonly name: 'sessions_userId_idx_a489d58a';
-                  readonly prefix: 'sessions_userId_idx';
-                  readonly columns: readonly ['userId'];
-                  readonly unique: false;
-                },
-              ];
+              uniques: readonly [{ readonly columns: readonly ['userId'] }];
+              indexes: readonly [];
               foreignKeys: readonly [
                 {
                   readonly source: {
@@ -643,6 +656,14 @@ type ContractBase = Omit<
         readonly models: {
           readonly Session: {
             readonly fields: {
+              readonly clientName: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly clientType: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
               readonly createdAt: {
                 readonly nullable: true;
                 readonly type: {
@@ -685,6 +706,8 @@ type ContractBase = Omit<
               readonly table: 'sessions';
               readonly namespaceId: 'public';
               readonly fields: {
+                readonly clientName: { readonly column: 'clientName' };
+                readonly clientType: { readonly column: 'clientType' };
                 readonly createdAt: { readonly column: 'createdAt' };
                 readonly id: { readonly column: 'id' };
                 readonly token: { readonly column: 'token' };
@@ -852,14 +875,6 @@ type ContractBase = Omit<
     readonly executionHash: ExecutionHash;
     readonly mutations: {
       readonly defaults: readonly [
-        {
-          readonly onCreate: { readonly id: 'ulid'; readonly kind: 'generator' };
-          readonly ref: {
-            readonly entry: 'sessions';
-            readonly field: 'id';
-            readonly namespace: 'public';
-          };
-        },
         {
           readonly onCreate: { readonly id: 'instantNow'; readonly kind: 'generator' };
           readonly onUpdate: { readonly id: 'instantNow'; readonly kind: 'generator' };

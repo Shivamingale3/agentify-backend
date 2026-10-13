@@ -32,6 +32,13 @@ class UserService {
   ): Promise<Models.public_User | null> {
     return await orm.public.User.where({ id: userId }).first();
   }
+
+  public async getUserByEmail(
+    email: string,
+    orm: Orm = this.orm,
+  ): Promise<Models.public_User | null> {
+    return await orm.public.User.where({ email }).first();
+  }
 }
 
 const userService = new UserService(db);

@@ -34,6 +34,20 @@
         "models": {
           "Session": {
             "fields": {
+              "clientName": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "clientType": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "createdAt": {
                 "nullable": true,
                 "type": {
@@ -90,6 +104,12 @@
             },
             "storage": {
               "fields": {
+                "clientName": {
+                  "column": "clientName"
+                },
+                "clientType": {
+                  "column": "clientType"
+                },
                 "createdAt": {
                   "column": "createdAt"
                 },
@@ -319,6 +339,16 @@
           "table": {
             "sessions": {
               "columns": {
+                "clientName": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "clientType": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
                 "createdAt": {
                   "codecId": "pg/timestamptz-temporal@1",
                   "default": {
@@ -367,22 +397,19 @@
                   }
                 }
               ],
-              "indexes": [
-                {
-                  "columns": [
-                    "userId"
-                  ],
-                  "name": "sessions_userId_idx_a489d58a",
-                  "prefix": "sessions_userId_idx",
-                  "unique": false
-                }
-              ],
+              "indexes": [],
               "primaryKey": {
                 "columns": [
                   "id"
                 ]
               },
-              "uniques": []
+              "uniques": [
+                {
+                  "columns": [
+                    "userId"
+                  ]
+                }
+              ]
             },
             "temporary_tasks": {
               "checks": [
@@ -562,23 +589,12 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "bd580deca50020410750609a7c404e97af5d49d844afe484bcd4fdb9dd0f6d0d"
+    "storageHash": "fe783d52d9e33803ef96277032b9d8baaf54e202ab195301ce332a5332908f45"
   },
   "execution": {
-    "executionHash": "a39716bbf2e94aa7a9a40ced10a975a5a0960efb57764836dca7214625b72ae2",
+    "executionHash": "e3c825f737c791281249edc4e1a9883f93a3297a6a54a5536b003e90f53f4b1e",
     "mutations": {
       "defaults": [
-        {
-          "onCreate": {
-            "id": "ulid",
-            "kind": "generator"
-          },
-          "ref": {
-            "entry": "sessions",
-            "field": "id",
-            "namespace": "public"
-          }
-        },
         {
           "onCreate": {
             "id": "instantNow",
