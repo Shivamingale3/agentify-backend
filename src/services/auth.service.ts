@@ -28,6 +28,8 @@ import sessionService from '#services/session.service.js';
 import { ulid } from 'ulid';
 
 const EMAIL_VERIFICATION_TTL_MS = 60 * 60 * 1000;
+// bcrypt (cost 10, same as hashPassword) of a random string nobody knows; compared against when the email is unknown.
+const DUMMY_PASSWORD_HASH = '$2b$10$9mnCjRy5..6kLPqeiNu7XuSgL7wfKjPpmzVBUybe3QuiNs0mjRowS';
 
 class AuthService {
   public async login(
@@ -37,13 +39,18 @@ class AuthService {
     try {
       const tokens = await dbInstance.transaction(async (tx) => {
         const user = await userService.getUserByEmail(userData.email, tx.orm);
-        if (!user) {
-          throw new HttpException(StatusCodes.UNAUTHORIZED, 'User not found');
+        // Always run bcrypt and return one message, so unknown emails can't be told apart by reply or timing.
+        const passwordMatches = await bcrypt.compare(
+          userData.password,
+          user?.password ?? DUMMY_PASSWORD_HASH,
+        );
+        if (!user || !passwordMatches) {
+          throw new HttpException(StatusCodes.UNAUTHORIZED, 'Invalid credentials');
         }
+        // Only revealed once the password is proven, so it can't be used to probe accounts.
         if (!user.emailVerified) {
           throw new HttpException(StatusCodes.UNAUTHORIZED, 'Email not verified');
         }
-        await this.verifyPassword(userData.password, user.password);
         return await this.getTokensPostAuthentication(user, deviceHeaders, tx.orm);
       });
       return tokens;
@@ -218,12 +225,6 @@ class AuthService {
 
   private async hashPassword(password: string): Promise<string> {
     return await bcrypt.hash(password, 10);
-  }
-
-  private async verifyPassword(plainPassword: string, hash: string): Promise<void> {
-    if (!(await bcrypt.compare(plainPassword, hash))) {
-      throw new HttpException(StatusCodes.UNAUTHORIZED, 'Invalid credentials');
-    }
   }
 }
 

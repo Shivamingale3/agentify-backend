@@ -194,6 +194,27 @@ describe('authService.verifyEmail edge cases', () => {
 });
 
 describe('POST /api/auth/login', () => {
+  // Regression: unknown emails got "User not found" and unverified ones were revealed before the password check.
+  it.each([
+    ['an unknown email', { email: 'nobody@example.com', password: newUser.password }],
+    ['a wrong password on an unverified account', { email: newUser.email, password: 'Wr0ngPass!' }],
+  ])('gives the same 401 for %s', async (_case, credentials) => {
+    await request(app).post('/api/auth/register').send(newUser).expect(200);
+
+    const res = await request(app).post('/api/auth/login').send(credentials).expect(401);
+    expect(res.body).toMatchObject({ message: 'Invalid credentials' });
+  });
+
+  it('says the email is unverified only after the password matches', async () => {
+    await request(app).post('/api/auth/register').send(newUser).expect(200);
+
+    const res = await request(app)
+      .post('/api/auth/login')
+      .send({ email: newUser.email, password: newUser.password })
+      .expect(401);
+    expect(res.body).toMatchObject({ message: 'Email not verified' });
+  });
+
   // Regression: the second login hit the unique userId on sessions and returned 500.
   it('lets a verified user log in again, replacing their session', async () => {
     await request(app).post('/api/auth/register').send(newUser).expect(200);
@@ -208,5 +229,24 @@ describe('POST /api/auth/login', () => {
     expect(sessions).toHaveLength(1);
     expect(sessions[0]?.id).not.toBe(first?.id);
     expect(sessions[0]?.token).not.toBe(first?.token);
+  });
+});
+
+describe('email case', () => {
+  // Regression: emails differing only in case created two accounts, and login was case-sensitive.
+  it('treats differently-cased emails as the same account', async () => {
+    await request(app)
+      .post('/api/auth/register')
+      .send({ ...newUser, email: 'Jane@Example.com' })
+      .expect(200);
+    await request(app).post('/api/auth/register').send(newUser).expect(409);
+
+    expect(await db.public.User.all().toArray()).toMatchObject([{ email: 'jane@example.com' }]);
+
+    await db.public.User.where({ email: 'jane@example.com' }).update({ emailVerified: true });
+    await request(app)
+      .post('/api/auth/login')
+      .send({ email: 'JANE@example.COM', password: newUser.password })
+      .expect(200);
   });
 });

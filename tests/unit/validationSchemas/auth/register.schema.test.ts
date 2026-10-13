@@ -37,6 +37,16 @@ describe('registerSchema', () => {
     it('reports an invalid address', () => {
       expect(messagesFor({ ...minimal, email: 'nope' })).toContain('Invalid email address');
     });
+
+    it('trims and lowercases the address', () => {
+      expect(registerSchema.parse({ ...minimal, email: '  Jane@Example.COM ' }).email).toBe(
+        'jane@example.com',
+      );
+    });
+
+    it('reports a whitespace-only address as required', () => {
+      expect(messagesFor({ ...minimal, email: '   ' })).toContain('Email is required');
+    });
   });
 
   describe('password', () => {

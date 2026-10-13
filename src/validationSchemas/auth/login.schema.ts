@@ -1,7 +1,12 @@
 import z from 'zod';
 
 const loginSchema = z.object({
-  email: z.email({ error: 'Email is invalid' }),
+  // Same normalization as registerSchema, or mixed-case input never matches the stored email.
+  email: z
+    .string({ error: 'Email is invalid' })
+    .trim()
+    .toLowerCase()
+    .pipe(z.email('Email is invalid')),
   password: z
     .string({ error: 'Password is required' })
     .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')

@@ -13,10 +13,13 @@ const registerSchema = z.object({
     .max(50, 'Last name must be at most 50 characters long')
     .nullable()
     .optional(),
+  // Normalize before validating so Jane@x.com and jane@x.com are the same account.
   email: z
-    .email('Invalid email address')
+    .string({ error: 'Email is required' })
+    .trim()
+    .toLowerCase()
     .nonempty('Email is required')
-    .nonoptional('Email is required'),
+    .pipe(z.email('Invalid email address')),
   countryCode: z
     .string()
     .regex(/^\+\d{1,3}$/, 'Country code must be in format +XX (e.g. +91)')
