@@ -33,7 +33,8 @@ const envSchema = z.object({
         .array(
           z.url({
             protocol: /^https?$/,
-            error: 'ALLOWED_ORIGINS must be a comma separated list of http(s) URLs',
+            error:
+              'ALLOWED_ORIGINS must be a comma separated list of http(s) URLs',
           }),
         )
         .min(1),
