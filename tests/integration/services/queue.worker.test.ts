@@ -22,7 +22,7 @@ describe('queueService.onProcess (real Redis)', () => {
     await request(app)
       .post('/api/auth/register')
       .send({ email: 'jane@example.com', password: 'Passw0rd!' })
-      .expect(200);
+      .expect(201);
 
     await vi.waitFor(
       () => {

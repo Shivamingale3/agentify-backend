@@ -301,6 +301,23 @@ describe('AuthService.login', () => {
     );
   });
 
+  // Regression: lookup + bcrypt ran inside the transaction, holding a pooled connection idle for ~100 ms.
+  it('checks credentials before opening a transaction', async () => {
+    await authService.login(credentials, {});
+
+    expect(userService.getUserByEmail).toHaveBeenCalledWith(credentials.email);
+    const lookupOrder = vi.mocked(userService.getUserByEmail).mock.invocationCallOrder[0] ?? 0;
+    const txOrder = vi.mocked(dbInstance.transaction).mock.invocationCallOrder[0] ?? 0;
+    expect(lookupOrder).toBeLessThan(txOrder);
+  });
+
+  it('never opens a transaction for a wrong password', async () => {
+    await expect(
+      authService.login({ ...credentials, password: 'Wr0ngPass!' }, {}),
+    ).rejects.toMatchObject({ statusCode: 401 });
+    expect(dbInstance.transaction).not.toHaveBeenCalled();
+  });
+
   // Regression: the cache was written inside the transaction, so a failed commit left a phantom session.
   it('leaves the cache untouched when the transaction fails to commit', async () => {
     vi.mocked(dbInstance.transaction).mockImplementationOnce(async (fn) => {

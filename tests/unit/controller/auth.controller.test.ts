@@ -11,28 +11,30 @@ describe('AuthController.register', () => {
   it('registers the request body and responds with success', async () => {
     vi.mocked(authService.register).mockResolvedValue(undefined);
     const json = vi.fn();
-    const next = vi.fn<(err?: unknown) => void>();
+    const status = vi.fn(() => ({ json }));
 
-    await authController.register({ body } as Request, { json } as unknown as Response, next);
+    await authController.register({ body } as Request, { status, json } as unknown as Response);
 
     expect(authService.register).toHaveBeenCalledWith(body);
+    expect(status).toHaveBeenCalledWith(201);
     expect(json).toHaveBeenCalledWith({
       success: true,
       message: 'Registered successfully',
       data: null,
     });
-    expect(next).not.toHaveBeenCalled();
   });
 
-  it('forwards service errors to next without responding', async () => {
+  // Express 5 forwards a rejected handler to the error middleware, so the controller just rejects.
+  it('rejects with the service error without responding', async () => {
     const err = new Error('fail');
     vi.mocked(authService.register).mockRejectedValue(err);
     const json = vi.fn();
-    const next = vi.fn<(err?: unknown) => void>();
+    const status = vi.fn(() => ({ json }));
 
-    await authController.register({ body } as Request, { json } as unknown as Response, next);
-
-    expect(next).toHaveBeenCalledWith(err);
+    await expect(
+      authController.register({ body } as Request, { status, json } as unknown as Response),
+    ).rejects.toBe(err);
+    expect(status).not.toHaveBeenCalled();
     expect(json).not.toHaveBeenCalled();
   });
 });

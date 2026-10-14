@@ -19,7 +19,7 @@ describe('authRouter POST /register', () => {
       .post('/auth/register')
       .send({ ...valid, unknownField: 'dropped' });
 
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(201);
     expect(res.body).toEqual({ success: true, message: 'Registered successfully', data: null });
     // Body is the schema-parsed value: unknown keys stripped.
     expect(authService.register).toHaveBeenCalledWith(valid);

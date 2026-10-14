@@ -20,7 +20,7 @@ describe('index router', () => {
     const res = await request(app)
       .post('/auth/register')
       .send({ email: 'a@example.com', password: 'Passw0rd!' });
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(201);
     expect(authService.register).toHaveBeenCalledOnce();
   });
 

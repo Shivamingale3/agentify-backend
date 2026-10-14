@@ -30,7 +30,7 @@ afterAll(async () => {
 });
 
 async function registerAndGetToken(): Promise<string> {
-  await request(app).post('/api/auth/register').send(newUser).expect(200);
+  await request(app).post('/api/auth/register').send(newUser).expect(201);
   const task = await db.public.TemporaryTasks.first();
   if (!task) throw new Error('expected a verification task');
   return task.token;
@@ -40,7 +40,7 @@ describe('POST /api/auth/register', () => {
   it('creates an unverified user and a verification task', async () => {
     const res = await request(app).post('/api/auth/register').send(newUser);
 
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(201);
     const user = await db.public.User.first({ email: newUser.email });
     expect(user).toMatchObject({ firstName: 'Jane', emailVerified: false });
     expect(user?.password).not.toBe(newUser.password);
@@ -54,7 +54,7 @@ describe('POST /api/auth/register', () => {
   });
 
   it('returns 409 for a duplicate email and leaves no extra rows', async () => {
-    await request(app).post('/api/auth/register').send(newUser).expect(200);
+    await request(app).post('/api/auth/register').send(newUser).expect(201);
 
     const res = await request(app).post('/api/auth/register').send(newUser);
 
@@ -73,7 +73,7 @@ describe('POST /api/auth/register', () => {
 
 describe('authService.verifyEmail', () => {
   it('marks the user verified and makes the token single-use', async () => {
-    await request(app).post('/api/auth/register').send(newUser).expect(200);
+    await request(app).post('/api/auth/register').send(newUser).expect(201);
     const task = await db.public.TemporaryTasks.first();
     if (!task) throw new Error('expected a verification task');
 
@@ -195,9 +195,33 @@ describe('authService.verifyEmail edge cases', () => {
 });
 
 describe('POST /api/auth/login', () => {
+  it('sets httpOnly, strict, path=/ auth and refresh cookies that expire with their JWTs', async () => {
+    await request(app).post('/api/auth/register').send(newUser).expect(201);
+    await db.public.User.where({ email: newUser.email }).update({ emailVerified: true });
+
+    const res = await request(app)
+      .post('/api/auth/login')
+      .send({ email: newUser.email, password: newUser.password })
+      .expect(200);
+    const cookies = ([] as string[]).concat(res.headers['set-cookie'] ?? []);
+
+    for (const [name, maxAge] of [
+      [env.AUTH_COOKIE_NAME, env.AUTH_EXPIRY],
+      [env.REFRESH_COOKIE_NAME, env.REFRESH_EXPIRY],
+    ] as const) {
+      const cookie = cookies.find((c) => c.startsWith(`${name}=`)) ?? '';
+      expect(cookie).toContain('HttpOnly');
+      expect(cookie).toContain('SameSite=Strict');
+      expect(cookie).toContain('Path=/');
+      expect(cookie).toContain(`Max-Age=${String(maxAge)}`);
+      // Secure only in production (APP_ENV=test here), so local http still works.
+      expect(cookie).not.toContain('Secure');
+    }
+  });
+
   // Regression: a weak password got a 400 naming the strength rule instead of the uniform 401.
   it('answers a weak wrong password with Invalid credentials, not the password policy', async () => {
-    await request(app).post('/api/auth/register').send(newUser).expect(200);
+    await request(app).post('/api/auth/register').send(newUser).expect(201);
 
     const res = await request(app)
       .post('/api/auth/login')
@@ -208,7 +232,7 @@ describe('POST /api/auth/login', () => {
 
   // Regression: x-client-name had no length cap and was stored verbatim on the session.
   it('stores an oversized device header as Unknown and still logs in', async () => {
-    await request(app).post('/api/auth/register').send(newUser).expect(200);
+    await request(app).post('/api/auth/register').send(newUser).expect(201);
     await db.public.User.where({ email: newUser.email }).update({ emailVerified: true });
 
     await request(app)
@@ -226,7 +250,7 @@ describe('POST /api/auth/login', () => {
 
   // Regression: the raw refresh token was stored in sessions.token and the Redis session.
   it('stores only a SHA-256 hash of the refresh token', async () => {
-    await request(app).post('/api/auth/register').send(newUser).expect(200);
+    await request(app).post('/api/auth/register').send(newUser).expect(201);
     await db.public.User.where({ email: newUser.email }).update({ emailVerified: true });
 
     const res = await request(app)
@@ -251,14 +275,14 @@ describe('POST /api/auth/login', () => {
     ['an unknown email', { email: 'nobody@example.com', password: newUser.password }],
     ['a wrong password on an unverified account', { email: newUser.email, password: 'Wr0ngPass!' }],
   ])('gives the same 401 for %s', async (_case, credentials) => {
-    await request(app).post('/api/auth/register').send(newUser).expect(200);
+    await request(app).post('/api/auth/register').send(newUser).expect(201);
 
     const res = await request(app).post('/api/auth/login').send(credentials).expect(401);
     expect(res.body).toMatchObject({ message: 'Invalid credentials' });
   });
 
   it('says the email is unverified only after the password matches', async () => {
-    await request(app).post('/api/auth/register').send(newUser).expect(200);
+    await request(app).post('/api/auth/register').send(newUser).expect(201);
 
     const res = await request(app)
       .post('/api/auth/login')
@@ -269,7 +293,7 @@ describe('POST /api/auth/login', () => {
 
   // Regression: the second login hit the unique userId on sessions and returned 500.
   it('lets a verified user log in again, replacing their session', async () => {
-    await request(app).post('/api/auth/register').send(newUser).expect(200);
+    await request(app).post('/api/auth/register').send(newUser).expect(201);
     await db.public.User.where({ email: newUser.email }).update({ emailVerified: true });
     const credentials = { email: newUser.email, password: newUser.password };
 
@@ -296,7 +320,7 @@ describe('email case', () => {
     await request(app)
       .post('/api/auth/register')
       .send({ ...newUser, email: 'Jane@Example.com' })
-      .expect(200);
+      .expect(201);
     await request(app).post('/api/auth/register').send(newUser).expect(409);
 
     expect(await db.public.User.all().toArray()).toMatchObject([{ email: 'jane@example.com' }]);

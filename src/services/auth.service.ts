@@ -37,22 +37,25 @@ class AuthService {
     deviceHeaders: ExtraDeviceHeaders,
   ): Promise<{ authToken: string; refreshToken: string }> {
     try {
-      const { tokens, session, previousSessionId } = await dbInstance.transaction(async (tx) => {
-        const user = await userService.getUserByEmail(userData.email, tx.orm);
-        // Always run bcrypt and return one message, so unknown emails can't be told apart by reply or timing.
-        const passwordMatches = await bcrypt.compare(
-          userData.password,
-          user?.password ?? DUMMY_PASSWORD_HASH,
-        );
-        if (!user || !passwordMatches) {
-          throw new HttpException(StatusCodes.UNAUTHORIZED, 'Invalid credentials');
-        }
-        // Only revealed once the password is proven, so it can't be used to probe accounts.
-        if (!user.emailVerified) {
-          throw new HttpException(StatusCodes.UNAUTHORIZED, 'Email not verified');
-        }
-        return await this.getTokensPostAuthentication(user, deviceHeaders, tx.orm);
-      });
+      // Read and bcrypt run outside the transaction: bcrypt takes ~50-100 ms of pure CPU, and inside a
+      // transaction it would hold a pooled DB connection idle that whole time (pool is 10), so a
+      // burst of logins could starve every other query. The transaction covers only the writes.
+      const user = await userService.getUserByEmail(userData.email);
+      // Always run bcrypt and return one message, so unknown emails can't be told apart by reply or timing.
+      const passwordMatches = await bcrypt.compare(
+        userData.password,
+        user?.password ?? DUMMY_PASSWORD_HASH,
+      );
+      if (!user || !passwordMatches) {
+        throw new HttpException(StatusCodes.UNAUTHORIZED, 'Invalid credentials');
+      }
+      // Only revealed once the password is proven, so it can't be used to probe accounts.
+      if (!user.emailVerified) {
+        throw new HttpException(StatusCodes.UNAUTHORIZED, 'Email not verified');
+      }
+      const { tokens, session, previousSessionId } = await dbInstance.transaction(
+        async (tx) => await this.getTokensPostAuthentication(user, deviceHeaders, tx.orm),
+      );
       // Redis can't roll back, so the cache only changes once the session is committed.
       await this.cacheSession(session, previousSessionId);
       return tokens;
