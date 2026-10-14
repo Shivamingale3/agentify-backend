@@ -39,7 +39,7 @@ describe('HTTP stack', () => {
     expect(res.status).toBe(400);
     expect(res.body).toEqual({
       success: false,
-      message: expect.stringContaining('Password must be 8 to 16 chars') as unknown,
+      message: expect.stringContaining('Password must be at least 8 characters long') as unknown,
     });
   });
 

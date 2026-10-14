@@ -15,4 +15,15 @@ describe('loginSchema', () => {
       expect(loginSchema.safeParse({ email, password }).success).toBe(false);
     });
   });
+
+  describe('password', () => {
+    // Regression: login enforced the register strength rules, leaking the policy.
+    it.each(['abc', 'password', 'a'.repeat(128)])('accepts any non-empty password %j', (pw) => {
+      expect(loginSchema.safeParse({ email: 'a@example.com', password: pw }).success).toBe(true);
+    });
+
+    it.each([undefined, '', 'a'.repeat(129)])('rejects %j', (pw) => {
+      expect(loginSchema.safeParse({ email: 'a@example.com', password: pw }).success).toBe(false);
+    });
+  });
 });

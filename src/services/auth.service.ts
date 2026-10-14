@@ -85,6 +85,9 @@ class AuthService {
       if (userData.lastName) {
         createUserPayload.lastName = userData.lastName;
       }
+      // Intentional: the frontend pre-fills countryCode (India), so a countryCode with no mobile
+      // isn't a real choice by the user. Store the phone only when both parts are sent; otherwise
+      // drop both silently (no 400), so a default value never ends up as stored data.
       if (userData.countryCode && userData.mobile) {
         createUserPayload.countryCode = userData.countryCode;
         createUserPayload.mobile = userData.mobile;

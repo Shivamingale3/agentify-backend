@@ -7,13 +7,14 @@ const loginSchema = z.object({
     .trim()
     .toLowerCase()
     .pipe(z.email('Email is invalid')),
+  // Login only compares against the stored hash. Strength rules belong in registerSchema, where a
+  // password is created. Enforcing them here would tell anyone the policy ("must contain an
+  // uppercase letter") and lock out existing users if the policy is ever tightened.
   password: z
     .string({ error: 'Password is required' })
-    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
-    .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
-    .regex(/[0-9]/, 'Password must contain at least one number')
-    .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character')
-    .min(8, 'Password must be at least 8 characters long'),
+    .min(1, 'Password is required')
+    // Bounds the bcrypt input; no real password is this long. Same message as a wrong password.
+    .max(128, 'Invalid credentials'),
 });
 
 export default loginSchema;

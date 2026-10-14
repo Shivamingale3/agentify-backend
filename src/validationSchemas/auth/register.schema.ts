@@ -32,12 +32,18 @@ const registerSchema = z.object({
     .regex(/^\d+$/, 'Mobile number must contain only digits')
     .nullable()
     .optional(),
+  // Policy: 8+ chars with an uppercase letter, lowercase letter, digit and symbol. Any non-alphanumeric
+  // character counts as a symbol (incl. space, '-', '.'), so password-manager output isn't rejected.
   password: z
-    .string()
-    .regex(
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+])[A-Za-z\d!@#$%^&*()_+]{8,16}$/,
-      'Password must be 8 to 16 chars composed of one uppercase letter, one lowercase letter, one number and a special character ',
-    )
-    .nonempty('Password is required'),
+    .string({ error: 'Password is required' })
+    .nonempty('Password is required')
+    .min(8, 'Password must be at least 8 characters long')
+    // bcrypt silently ignores everything past 72 *bytes*, so two passwords that differ only after
+    // that would both log in. Count bytes, not chars: emoji/accents take 2-4 bytes each.
+    .refine((p) => Buffer.byteLength(p, 'utf8') <= 72, 'Password must be at most 72 bytes long')
+    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+    .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+    .regex(/[0-9]/, 'Password must contain at least one number')
+    .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character'),
 });
 export default registerSchema;

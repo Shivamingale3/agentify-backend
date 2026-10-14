@@ -50,18 +50,26 @@ describe('registerSchema', () => {
   });
 
   describe('password', () => {
-    it.each(['Aa1!aaaa', 'Aa1!aaaaaaaaaaaa'])('accepts boundary length %j', (password) => {
+    it.each(['Aa1!aaaa', 'Aa1!' + 'a'.repeat(68)])('accepts boundary length %j', (password) => {
       expect(registerSchema.safeParse({ ...minimal, password }).success).toBe(true);
     });
 
+    // Regression: only !@#$%^&*()_+ counted as symbols and passwords were capped at 16 chars.
+    it.each(['Passw0rd-', 'Passw0rd.', 'Pass w0rd', 'Aa1!aaaaaaaaaaaaa'])(
+      'accepts %j',
+      (password) => {
+        expect(registerSchema.safeParse({ ...minimal, password }).success).toBe(true);
+      },
+    );
+
     it.each([
       ['too short', 'Aa1!aaa'],
-      ['too long', 'Aa1!aaaaaaaaaaaaa'],
+      ['too long (73 bytes)', 'Aa1!' + 'a'.repeat(69)],
+      ['too long in bytes (multi-byte chars)', 'Aa1!' + 'é'.repeat(35)],
       ['no uppercase', 'passw0rd!'],
       ['no lowercase', 'PASSW0RD!'],
       ['no digit', 'Password!'],
       ['no special', 'Passw0rdd'],
-      ['disallowed char', 'Passw0rd!-'],
       ['empty', ''],
     ])('rejects %s', (_label, password) => {
       expect(messagesFor({ ...minimal, password })).toEqual(

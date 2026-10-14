@@ -116,6 +116,16 @@ describe('AuthService.register', () => {
     });
   });
 
+  // Intentional behaviour: the frontend pre-fills countryCode, so on its own it is not stored.
+  it('drops a countryCode sent without a mobile', async () => {
+    await authService.register({ email: user.email, password: 'Passw0rd!', countryCode: '+91' });
+
+    expect(vi.mocked(userService.createUser).mock.calls[0]?.[0]).toMatchObject({
+      countryCode: null,
+      mobile: null,
+    });
+  });
+
   it('stores one random token in the task, the cache and the emailed link', async () => {
     await authService.register({ email: user.email, password: 'Passw0rd!' });
 

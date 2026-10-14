@@ -195,6 +195,17 @@ describe('authService.verifyEmail edge cases', () => {
 });
 
 describe('POST /api/auth/login', () => {
+  // Regression: a weak password got a 400 naming the strength rule instead of the uniform 401.
+  it('answers a weak wrong password with Invalid credentials, not the password policy', async () => {
+    await request(app).post('/api/auth/register').send(newUser).expect(200);
+
+    const res = await request(app)
+      .post('/api/auth/login')
+      .send({ email: newUser.email, password: 'abc' })
+      .expect(401);
+    expect(res.body).toMatchObject({ message: 'Invalid credentials' });
+  });
+
   // Regression: x-client-name had no length cap and was stored verbatim on the session.
   it('stores an oversized device header as Unknown and still logs in', async () => {
     await request(app).post('/api/auth/register').send(newUser).expect(200);
