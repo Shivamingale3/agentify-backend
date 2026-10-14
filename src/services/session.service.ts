@@ -18,6 +18,13 @@ class SessionService {
     });
   }
 
+  public async getSessionByUserId(
+    userId: string,
+    orm: Orm = this.orm,
+  ): Promise<Omit<Models.public_Session, 'user'> | null> {
+    return await orm.public.Session.first({ userId });
+  }
+
   public async deleteSessionByUserId(userId: string, orm: Orm = this.orm): Promise<void> {
     await orm.public.Session.where({ userId }).delete();
   }

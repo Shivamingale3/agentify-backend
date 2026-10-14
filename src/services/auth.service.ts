@@ -37,7 +37,7 @@ class AuthService {
     deviceHeaders: ExtraDeviceHeaders,
   ): Promise<{ authToken: string; refreshToken: string }> {
     try {
-      const tokens = await dbInstance.transaction(async (tx) => {
+      const { tokens, session, previousSessionId } = await dbInstance.transaction(async (tx) => {
         const user = await userService.getUserByEmail(userData.email, tx.orm);
         // Always run bcrypt and return one message, so unknown emails can't be told apart by reply or timing.
         const passwordMatches = await bcrypt.compare(
@@ -53,6 +53,8 @@ class AuthService {
         }
         return await this.getTokensPostAuthentication(user, deviceHeaders, tx.orm);
       });
+      // Redis can't roll back, so the cache only changes once the session is committed.
+      await this.cacheSession(session, previousSessionId);
       return tokens;
     } catch (error) {
       if (error instanceof HttpException) {
@@ -113,7 +115,11 @@ class AuthService {
     user: Models.public_User,
     deviceHeaders: ExtraDeviceHeaders,
     orm: Orm,
-  ): Promise<{ authToken: string; refreshToken: string }> {
+  ): Promise<{
+    tokens: { authToken: string; refreshToken: string };
+    session: Omit<Models.public_Session, 'user'>;
+    previousSessionId: string | null;
+  }> {
     const sessionId = ulid();
     const authToken = jwtService.generateToken<AuthTokenPayload>(
       { email: user.email, userId: user.id, sessionId },
@@ -134,9 +140,24 @@ class AuthService {
       id: sessionId,
       userId: user.id,
     };
+    const previous = await sessionService.getSessionByUserId(user.id, orm);
     const session = await sessionService.createSession(sessionData, orm);
-    await cacheService.set(sessionId, session);
-    return { authToken, refreshToken };
+    return {
+      tokens: { authToken, refreshToken },
+      session,
+      previousSessionId: previous?.id ?? null,
+    };
+  }
+
+  // Call only after the session is committed. The TTL matches the refresh token's lifetime.
+  private async cacheSession(
+    session: Omit<Models.public_Session, 'user'>,
+    previousSessionId: string | null,
+  ): Promise<void> {
+    if (previousSessionId) {
+      await cacheService.del(previousSessionId);
+    }
+    await cacheService.set(session.id, session, env.REFRESH_EXPIRY * 1000);
   }
 
   private async sendVerificationEmail(payload: EmailVerificationTask): Promise<void> {

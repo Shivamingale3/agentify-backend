@@ -1,5 +1,6 @@
 import { StatusCodes } from 'http-status-codes';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import * as bcrypt from 'bcrypt';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HttpException } from '#exceptions/http.exception.js';
 import type { Models } from '#prisma/contract.js';
 import { dbInstance } from '#providers/db.provider.js';
@@ -7,6 +8,7 @@ import { env } from '#providers/env.provider.js';
 import authService from '#services/auth.service.js';
 import cacheService from '#services/cache.service.js';
 import queueService from '#services/queue.service.js';
+import sessionService from '#services/session.service.js';
 import temporaryTaskService from '#services/temporaryTask.service.js';
 import userService from '#services/user.service.js';
 import { logger } from '#utils/logger.js';
@@ -19,7 +21,7 @@ vi.mock('#providers/db.provider.js', () => ({
   dbInstance: { transaction: vi.fn((fn: (tx: unknown) => unknown) => fn({ orm: {} })) },
 }));
 vi.mock('#services/user.service.js', () => ({
-  default: { createUser: vi.fn(), updateUser: vi.fn() },
+  default: { createUser: vi.fn(), updateUser: vi.fn(), getUserByEmail: vi.fn() },
 }));
 vi.mock('#services/temporaryTask.service.js', () => ({
   default: { createTask: vi.fn(), getTaskByToken: vi.fn(), deleteTaskByToken: vi.fn() },
@@ -28,6 +30,9 @@ vi.mock('#services/cache.service.js', () => ({
   default: { get: vi.fn(), set: vi.fn(), del: vi.fn() },
 }));
 vi.mock('#services/queue.service.js', () => ({ default: { enqueueJob: vi.fn() } }));
+vi.mock('#services/session.service.js', () => ({
+  default: { getSessionByUserId: vi.fn(), createSession: vi.fn() },
+}));
 
 const user = { id: 'user_1', email: 'a@example.com' } as Models.public_User;
 const task = { token: 'tok' } as Models.public_TemporaryTasks;
@@ -253,5 +258,49 @@ describe('AuthService.verifyEmail', () => {
 
     expect(logError).toHaveBeenCalled();
     expect(JSON.stringify(logError.mock.calls)).not.toContain('tok');
+  });
+});
+
+describe('AuthService.login', () => {
+  const credentials = { email: user.email, password: 'Passw0rd!' };
+  let verifiedUser: Models.public_User;
+
+  beforeAll(async () => {
+    verifiedUser = { ...user, emailVerified: true, password: await bcrypt.hash('Passw0rd!', 4) };
+  });
+
+  beforeEach(() => {
+    vi.mocked(userService.getUserByEmail).mockResolvedValue(verifiedUser);
+    vi.mocked(sessionService.getSessionByUserId).mockResolvedValue({
+      id: 'old_session',
+    } as Models.public_Session);
+    vi.mocked(sessionService.createSession).mockImplementation((data) =>
+      Promise.resolve(data as Models.public_Session),
+    );
+  });
+
+  it('after commit, drops the replaced session from cache and caches the new one with a TTL', async () => {
+    await authService.login(credentials, {});
+
+    const created = vi.mocked(sessionService.createSession).mock.calls[0]?.[0];
+    expect(cacheService.del).toHaveBeenCalledWith('old_session');
+    expect(cacheService.set).toHaveBeenCalledWith(
+      created?.id,
+      expect.objectContaining({ userId: user.id }),
+      env.REFRESH_EXPIRY * 1000,
+    );
+  });
+
+  // Regression: the cache was written inside the transaction, so a failed commit left a phantom session.
+  it('leaves the cache untouched when the transaction fails to commit', async () => {
+    vi.mocked(dbInstance.transaction).mockImplementationOnce(async (fn) => {
+      await fn({ orm: {} } as never);
+      throw new Error('commit failed');
+    });
+
+    await expect(authService.login(credentials, {})).rejects.toThrow('commit failed');
+    expect(sessionService.createSession).toHaveBeenCalledOnce();
+    expect(cacheService.set).not.toHaveBeenCalled();
+    expect(cacheService.del).not.toHaveBeenCalled();
   });
 });

@@ -229,6 +229,12 @@ describe('POST /api/auth/login', () => {
     expect(sessions).toHaveLength(1);
     expect(sessions[0]?.id).not.toBe(first?.id);
     expect(sessions[0]?.token).not.toBe(first?.token);
+
+    // Redis holds only the current session, and it expires with the refresh token.
+    const current = sessions[0]?.id ?? '';
+    expect(await redis.exists(first?.id ?? '')).toBe(0);
+    expect(await redis.pTTL(current)).toBeGreaterThan(0);
+    expect(await redis.pTTL(current)).toBeLessThanOrEqual(env.REFRESH_EXPIRY * 1000);
   });
 });
 
