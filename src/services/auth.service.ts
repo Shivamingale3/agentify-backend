@@ -24,7 +24,7 @@ import { emailVerificationTaskSchema } from '#validationSchemas/auth/emailVerifi
 import z from 'zod';
 import jwtService from '#services/jwt.service.js';
 import type { ExtraDeviceHeaders } from '#types/auth.types.js';
-import sessionService from '#services/session.service.js';
+import sessionService, { sessionCacheKey } from '#services/session.service.js';
 import { ulid } from 'ulid';
 
 const EMAIL_VERIFICATION_TTL_MS = 60 * 60 * 1000;
@@ -37,9 +37,9 @@ class AuthService {
     deviceHeaders: ExtraDeviceHeaders,
   ): Promise<{ authToken: string; refreshToken: string }> {
     try {
-      // Read and bcrypt run outside the transaction: bcrypt takes ~50-100 ms of pure CPU, and inside a
-      // transaction it would hold a pooled DB connection idle that whole time (pool is 10), so a
-      // burst of logins could starve every other query. The transaction covers only the writes.
+      // Login is 2 statements and no transaction: SELECT user, then one atomic upsert of the session.
+      // bcrypt (~50-100 ms of CPU) must never run inside a transaction: it would hold a pooled
+      // connection idle (pool is 10), so a burst of logins could starve every other query.
       const user = await userService.getUserByEmail(userData.email);
       // Always run bcrypt and return one message, so unknown emails can't be told apart by reply or timing.
       const passwordMatches = await bcrypt.compare(
@@ -53,11 +53,10 @@ class AuthService {
       if (!user.emailVerified) {
         throw new HttpException(StatusCodes.UNAUTHORIZED, 'Email not verified');
       }
-      const { tokens, session, previousSessionId } = await dbInstance.transaction(
-        async (tx) => await this.getTokensPostAuthentication(user, deviceHeaders, tx.orm),
-      );
-      // Redis can't roll back, so the cache only changes once the session is committed.
-      await this.cacheSession(session, previousSessionId);
+      const { tokens, session } = await this.getTokensPostAuthentication(user, deviceHeaders);
+      // Cache only after the session row is written (a Redis write can't be rolled back). Keyed by
+      // user, so this overwrites the previous login's entry. TTL matches the refresh token.
+      await cacheService.set(sessionCacheKey(user.id), session, env.REFRESH_EXPIRY * 1000);
       return tokens;
     } catch (error) {
       if (error instanceof HttpException) {
@@ -112,19 +111,18 @@ class AuthService {
     }
   }
 
-  public async clearSession(userId: string, sessionId: string): Promise<void> {
-    await cacheService.del(sessionId);
+  public async clearSession(userId: string): Promise<void> {
+    await cacheService.del(sessionCacheKey(userId));
     await sessionService.deleteSessionByUserId(userId);
   }
 
   public async getTokensPostAuthentication(
     user: Models.public_User,
     deviceHeaders: ExtraDeviceHeaders,
-    orm: Orm,
+    orm?: Orm,
   ): Promise<{
     tokens: { authToken: string; refreshToken: string };
     session: Omit<Models.public_Session, 'user'>;
-    previousSessionId: string | null;
   }> {
     const sessionId = ulid();
     const authToken = jwtService.generateToken<AuthTokenPayload>(
@@ -146,24 +144,8 @@ class AuthService {
       id: sessionId,
       userId: user.id,
     };
-    const previous = await sessionService.getSessionByUserId(user.id, orm);
     const session = await sessionService.createSession(sessionData, orm);
-    return {
-      tokens: { authToken, refreshToken },
-      session,
-      previousSessionId: previous?.id ?? null,
-    };
-  }
-
-  // Call only after the session is committed. The TTL matches the refresh token's lifetime.
-  private async cacheSession(
-    session: Omit<Models.public_Session, 'user'>,
-    previousSessionId: string | null,
-  ): Promise<void> {
-    if (previousSessionId) {
-      await cacheService.del(previousSessionId);
-    }
-    await cacheService.set(session.id, session, env.REFRESH_EXPIRY * 1000);
+    return { tokens: { authToken, refreshToken }, session };
   }
 
   private async sendVerificationEmail(payload: EmailVerificationTask): Promise<void> {

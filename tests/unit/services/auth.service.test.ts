@@ -31,7 +31,8 @@ vi.mock('#services/cache.service.js', () => ({
 }));
 vi.mock('#services/queue.service.js', () => ({ default: { enqueueJob: vi.fn() } }));
 vi.mock('#services/session.service.js', () => ({
-  default: { getSessionByUserId: vi.fn(), createSession: vi.fn() },
+  sessionCacheKey: (userId: string) => `session:${userId}`,
+  default: { createSession: vi.fn() },
 }));
 
 const user = { id: 'user_1', email: 'a@example.com' } as Models.public_User;
@@ -281,53 +282,39 @@ describe('AuthService.login', () => {
 
   beforeEach(() => {
     vi.mocked(userService.getUserByEmail).mockResolvedValue(verifiedUser);
-    vi.mocked(sessionService.getSessionByUserId).mockResolvedValue({
-      id: 'old_session',
-    } as Models.public_Session);
     vi.mocked(sessionService.createSession).mockImplementation((data) =>
       Promise.resolve(data as Models.public_Session),
     );
   });
 
-  it('after commit, drops the replaced session from cache and caches the new one with a TTL', async () => {
+  it('caches the new session under the user key with the refresh-token TTL', async () => {
     await authService.login(credentials, {});
 
     const created = vi.mocked(sessionService.createSession).mock.calls[0]?.[0];
-    expect(cacheService.del).toHaveBeenCalledWith('old_session');
     expect(cacheService.set).toHaveBeenCalledWith(
-      created?.id,
-      expect.objectContaining({ userId: user.id }),
+      `session:${user.id}`,
+      expect.objectContaining({ id: created?.id, userId: user.id }),
       env.REFRESH_EXPIRY * 1000,
     );
   });
 
-  // Regression: lookup + bcrypt ran inside the transaction, holding a pooled connection idle for ~100 ms.
-  it('checks credentials before opening a transaction', async () => {
+  // Regression: login wrapped a session read + upsert in a transaction (5 statements, and earlier
+  // also bcrypt). Now it is SELECT user + one atomic upsert, with no transaction at all.
+  it('never opens a transaction', async () => {
     await authService.login(credentials, {});
-
-    expect(userService.getUserByEmail).toHaveBeenCalledWith(credentials.email);
-    const lookupOrder = vi.mocked(userService.getUserByEmail).mock.invocationCallOrder[0] ?? 0;
-    const txOrder = vi.mocked(dbInstance.transaction).mock.invocationCallOrder[0] ?? 0;
-    expect(lookupOrder).toBeLessThan(txOrder);
-  });
-
-  it('never opens a transaction for a wrong password', async () => {
     await expect(
       authService.login({ ...credentials, password: 'Wr0ngPass!' }, {}),
     ).rejects.toMatchObject({ statusCode: 401 });
+
+    expect(userService.getUserByEmail).toHaveBeenCalledWith(credentials.email);
     expect(dbInstance.transaction).not.toHaveBeenCalled();
   });
 
-  // Regression: the cache was written inside the transaction, so a failed commit left a phantom session.
-  it('leaves the cache untouched when the transaction fails to commit', async () => {
-    vi.mocked(dbInstance.transaction).mockImplementationOnce(async (fn) => {
-      await fn({ orm: {} } as never);
-      throw new Error('commit failed');
-    });
+  // Regression: a cache entry must never exist for a session the DB didn't store.
+  it('leaves the cache untouched when the session write fails', async () => {
+    vi.mocked(sessionService.createSession).mockRejectedValueOnce(new Error('db down'));
 
-    await expect(authService.login(credentials, {})).rejects.toThrow('commit failed');
-    expect(sessionService.createSession).toHaveBeenCalledOnce();
+    await expect(authService.login(credentials, {})).rejects.toThrow('db down');
     expect(cacheService.set).not.toHaveBeenCalled();
-    expect(cacheService.del).not.toHaveBeenCalled();
   });
 });

@@ -23,7 +23,9 @@ class UserService {
     },
     orm: Orm = this.orm,
   ): Promise<Models.public_User | null> {
-    return await orm.public.User.where({ id: userId }).update(userData);
+    // updateAll() on the primary key is one `UPDATE … RETURNING` statement; update() would first run
+    // a `SELECT id` and then update by id (2 round trips).
+    return await orm.public.User.where({ id: userId }).updateAll(userData).first();
   }
 
   public async getUserById(

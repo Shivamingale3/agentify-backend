@@ -1,9 +1,13 @@
 import type { CreateInput } from '@prisma/orm-postgres/orm-client';
-import { describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
 import type { Contract } from '#prisma/contract.js';
 import { db, dbInstance } from '#providers/db.provider.js';
 import userService from '#services/user.service.js';
 import { isUniqueViolation } from '#utils/errorGuards.js';
+import { queryLogOrm } from '../helpers/queryLog.js';
+
+const log = queryLogOrm();
+afterAll(() => log.close());
 
 function userInput(
   overrides: Partial<CreateInput<Contract, 'User'>> = {},
@@ -35,6 +39,29 @@ describe('userService (real Postgres)', () => {
 
   it('returns null when getting a missing user', async () => {
     expect(await userService.getUserById('does-not-exist')).toBeNull();
+  });
+
+  // Regression: where().update() ran SELECT id + UPDATE (2 round trips).
+  it('updates a user in a single UPDATE statement', async () => {
+    const created = await userService.createUser(userInput());
+    log.sql.length = 0;
+
+    const updated = await userService.updateUser(
+      { userId: created.id, userData: { emailVerified: true } },
+      log.orm,
+    );
+
+    expect(updated).toMatchObject({ id: created.id, emailVerified: true });
+    expect(log.sql).toHaveLength(1);
+    expect(log.sql[0]).toMatch(/^UPDATE .* WHERE "users"\."id" = \$\d+ RETURNING/);
+  });
+
+  it('looks a user up by email in a single indexed SELECT', async () => {
+    await userService.createUser(userInput());
+    log.sql.length = 0;
+
+    expect(await userService.getUserByEmail('jane@example.com', log.orm)).not.toBeNull();
+    expect(log.sql).toEqual([expect.stringMatching(/WHERE "users"\."email" = \$1 LIMIT 1$/)]);
   });
 
   it('updates a user and returns the updated row', async () => {

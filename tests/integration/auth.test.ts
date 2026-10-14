@@ -265,7 +265,7 @@ describe('POST /api/auth/login', () => {
 
     const session = await db.public.Session.first();
     expect(session?.token).toBe(digest);
-    const cached = await redis.get(session?.id ?? '');
+    const cached = await redis.get(`session:${session?.userId ?? ''}`);
     expect(cached).not.toContain(refreshToken);
     expect(cached).toContain(digest);
   });
@@ -306,11 +306,12 @@ describe('POST /api/auth/login', () => {
     expect(sessions[0]?.id).not.toBe(first?.id);
     expect(sessions[0]?.token).not.toBe(first?.token);
 
-    // Redis holds only the current session, and it expires with the refresh token.
-    const current = sessions[0]?.id ?? '';
-    expect(await redis.exists(first?.id ?? '')).toBe(0);
-    expect(await redis.pTTL(current)).toBeGreaterThan(0);
-    expect(await redis.pTTL(current)).toBeLessThanOrEqual(env.REFRESH_EXPIRY * 1000);
+    // Redis holds one entry per user, now pointing at the new session, expiring with the refresh token.
+    const key = `session:${sessions[0]?.userId ?? ''}`;
+    expect(await redis.keys('session:*')).toEqual([key]);
+    expect(JSON.parse((await redis.get(key)) ?? '{}')).toMatchObject({ id: sessions[0]?.id });
+    expect(await redis.pTTL(key)).toBeGreaterThan(0);
+    expect(await redis.pTTL(key)).toBeLessThanOrEqual(env.REFRESH_EXPIRY * 1000);
   });
 });
 

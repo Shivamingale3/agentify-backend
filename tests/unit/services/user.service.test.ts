@@ -5,9 +5,10 @@ import userService from '#services/user.service.js';
 
 // A fake Orm exposing only the query-builder calls UserService uses.
 function fakeOrm() {
-  const query = { update: vi.fn(), first: vi.fn() };
+  const updated = { first: vi.fn() };
+  const query = { updateAll: vi.fn(() => updated), first: vi.fn() };
   const User = { create: vi.fn(), where: vi.fn(() => query) };
-  return { orm: { public: { User } }, User, query };
+  return { orm: { public: { User } }, User, query, updated };
 }
 
 const fake = vi.hoisted(() => ({ db: {} as Record<string, unknown> }));
@@ -49,19 +50,19 @@ describe('UserService', () => {
   });
 
   it('updateUser scopes the update to the user id and returns the row', async () => {
-    defaultOrm.query.update.mockResolvedValue({ ...user, emailVerified: true });
+    defaultOrm.updated.first.mockResolvedValue({ ...user, emailVerified: true });
 
     await expect(
       userService.updateUser({ userId: 'u1', userData: { emailVerified: true } }),
     ).resolves.toMatchObject({ emailVerified: true });
     expect(defaultOrm.User.where).toHaveBeenCalledWith({ id: 'u1' });
-    expect(defaultOrm.query.update).toHaveBeenCalledWith({ emailVerified: true });
+    expect(defaultOrm.query.updateAll).toHaveBeenCalledWith({ emailVerified: true });
   });
 
   it('updateUser returns null when no row matched', async () => {
-    defaultOrm.query.update.mockResolvedValue(null);
+    defaultOrm.updated.first.mockResolvedValue(null);
     const tx = fakeOrm();
-    tx.query.update.mockResolvedValue(null);
+    tx.updated.first.mockResolvedValue(null);
 
     await expect(
       userService.updateUser({ userId: 'x', userData: {} }, tx.orm as unknown as Orm),

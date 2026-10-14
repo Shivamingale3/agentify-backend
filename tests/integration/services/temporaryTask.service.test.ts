@@ -1,7 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
 import { db, dbInstance } from '#providers/db.provider.js';
 import temporaryTaskService from '#services/temporaryTask.service.js';
 import { isUniqueViolation } from '#utils/errorGuards.js';
+import { queryLogOrm } from '../helpers/queryLog.js';
+
+const log = queryLogOrm();
+afterAll(() => log.close());
 
 const inOneHour = (): Temporal.Instant => Temporal.Now.instant().add({ hours: 1 });
 
@@ -32,6 +36,18 @@ describe('temporaryTaskService (real Postgres)', () => {
 
   it('returns null for an unknown token', async () => {
     expect(await temporaryTaskService.getTaskByToken('missing')).toBeNull();
+  });
+
+  // Regression: where().delete() ran SELECT id + DELETE (2 round trips).
+  it('deletes by token in a single DELETE statement', async () => {
+    await temporaryTaskService.createTask(taskFor('tok-1'));
+    log.sql.length = 0;
+
+    expect(await temporaryTaskService.deleteTaskByToken('tok-1', log.orm)).toMatchObject({
+      token: 'tok-1',
+    });
+    expect(log.sql).toHaveLength(1);
+    expect(log.sql[0]).toMatch(/^DELETE FROM .* WHERE "temporary_tasks"\."token" = \$1/);
   });
 
   it('deletes by token, returning the row once and null afterwards', async () => {
@@ -76,6 +92,18 @@ describe('temporaryTaskService (real Postgres)', () => {
   });
 
   // Regression: unused expired tasks used to stay in the table forever.
+  // Regression: deleteExpired ran `DELETE … RETURNING *` and shipped every deleted row to Node just
+  // to count them (2.8 s vs 0.12 s for 100k rows). It must return only the count.
+  it('deleteExpired never returns the deleted rows, only the count', async () => {
+    const past = Temporal.Now.instant().subtract({ minutes: 1 });
+    await temporaryTaskService.createTask(taskFor('old-1', past));
+    await temporaryTaskService.createTask(taskFor('old-2', past));
+    log.sql.length = 0;
+
+    expect(await temporaryTaskService.deleteExpired(Temporal.Now.instant(), log.orm)).toBe(2);
+    expect(log.sql.filter((sql) => sql.includes('RETURNING'))).toEqual([]);
+  });
+
   it('deleteExpired removes only tasks whose expiresAt has passed', async () => {
     const past = Temporal.Now.instant().subtract({ minutes: 1 });
     await temporaryTaskService.createTask(taskFor('expired-1', past));

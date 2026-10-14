@@ -31,7 +31,7 @@ class AuthController {
     if (!user?.userId || !user.sessionId) {
       throw new HttpException(StatusCodes.UNAUTHORIZED, 'Invalid request');
     }
-    await authService.clearSession(user.userId, user.sessionId);
+    await authService.clearSession(user.userId);
     cookieService.clearCookies(response);
     response.json(ApiResponse.success('Logged out successfully', null));
   }

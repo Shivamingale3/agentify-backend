@@ -5,9 +5,10 @@ import temporaryTaskService from '#services/temporaryTask.service.js';
 
 // A fake Orm exposing only the query-builder calls TemporaryTaskService uses.
 function fakeOrm() {
-  const query = { delete: vi.fn() };
+  const deleted = { first: vi.fn() };
+  const query = { deleteAll: vi.fn(() => deleted) };
   const TemporaryTasks = { create: vi.fn(), first: vi.fn(), where: vi.fn(() => query) };
-  return { orm: { public: { TemporaryTasks } }, TemporaryTasks, query };
+  return { orm: { public: { TemporaryTasks } }, TemporaryTasks, query, deleted };
 }
 
 const fake = vi.hoisted(() => ({ db: {} as Record<string, unknown> }));
@@ -67,7 +68,7 @@ describe('TemporaryTaskService', () => {
 
   it('deleteTaskByToken deletes scoped to the token and returns the deleted row', async () => {
     const tx = fakeOrm();
-    tx.query.delete.mockResolvedValue(task);
+    tx.deleted.first.mockResolvedValue(task);
 
     await expect(
       temporaryTaskService.deleteTaskByToken('tok', tx.orm as unknown as Orm),
@@ -77,7 +78,7 @@ describe('TemporaryTaskService', () => {
   });
 
   it('deleteTaskByToken returns null when nothing matched', async () => {
-    defaultOrm.query.delete.mockResolvedValue(null);
+    defaultOrm.deleted.first.mockResolvedValue(null);
 
     await expect(temporaryTaskService.deleteTaskByToken('used')).resolves.toBeNull();
   });
