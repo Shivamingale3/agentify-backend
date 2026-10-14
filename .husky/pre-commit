@@ -1,0 +1,14 @@
+# Git GUIs (VS Code) and non-interactive shells don't load ~/.zshrc, so nvm's node may be missing.
+if ! command -v node >/dev/null 2>&1; then
+  export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
+  # shellcheck disable=SC1091
+  [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" --no-use && nvm use --silent >/dev/null
+fi
+command -v node >/dev/null 2>&1 || { echo "pre-commit: node not found (install nvm or add node to PATH)" >&2; exit 1; }
+
+# Binaries from node_modules/.bin directly: no npx startup cost, no reliance on a global npm.
+./node_modules/.bin/lint-staged
+# ponytail: tsc checks the working tree, not just staged content; fine unless you commit partial hunks.
+./node_modules/.bin/tsc --noEmit
+# Unit tests only (~1s, no Docker). Integration tests need Docker: run `npm run test:integration`.
+./node_modules/.bin/vitest run
