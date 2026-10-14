@@ -1,4 +1,4 @@
-import z from 'zod';
+import { z } from 'zod';
 
 // Missing and empty ("KEY=") are both treated as absent.
 const requiredString = (name: string): z.ZodString =>
@@ -33,8 +33,7 @@ const envSchema = z.object({
         .array(
           z.url({
             protocol: /^https?$/,
-            error:
-              'ALLOWED_ORIGINS must be a comma separated list of http(s) URLs',
+            error: 'ALLOWED_ORIGINS must be a comma separated list of http(s) URLs',
           }),
         )
         .min(1),

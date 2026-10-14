@@ -3,8 +3,8 @@
   "editor.formatOnSave": true,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": "explicit",
-    "source.organizeImports": "never"
+    "source.organizeImports": "always",
+    "source.fixAll.oxc": "always"
   },
   "editor.tabSize": 2,
   "editor.insertSpaces": true,
@@ -19,9 +19,6 @@
   "typescript.preferences.importModuleSpecifier": "non-relative",
   "typescript.preferences.importModuleSpecifierEnding": "js",
   "typescript.tsdk": "node_modules/typescript/lib",
-
-  // ESLint settings
-  "eslint.validate": ["typescript"],
 
   // Search exclusions
   "search.exclude": {

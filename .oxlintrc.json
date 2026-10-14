@@ -1,10 +1,27 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "eslint", "import", "vitest"],
+  "categories": { "correctness": "error", "suspicious": "error" },
+  "env": { "node": true },
   "rules": {
-    "typescript/no-explicit-any": "off",
-    "typescript/no-floating-promises": "error"
+    "no-console": "error",
+    "typescript/no-explicit-any": "error",
+    "typescript/no-unsafe-member-access": "error",
+    "typescript/no-floating-promises": "error",
+    "typescript/no-misused-promises": "error",
+    "typescript/restrict-template-expressions": ["error", { "allowNumber": true }],
+    "typescript/explicit-function-return-type": "error",
+    "typescript/no-import-type-side-effects": "error",
+    "typescript/no-extraneous-class": ["error", { "allowWithDecorator": true }],
+    "no-restricted-imports": [
+      "error",
+      { "patterns": [{ "regex": "^\\.{1,2}/", "message": "Use the @/ alias" }] }
+    ]
   },
-  "env": {
-    "node": true
-  }
+  "overrides": [
+    {
+      "files": ["**/*.spec.ts", "test/**"],
+      "rules": { "no-console": "off", "typescript/explicit-function-return-type": "off" }
+    }
+  ]
 }
