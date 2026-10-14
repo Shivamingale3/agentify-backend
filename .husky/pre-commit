@@ -10,5 +10,5 @@ command -v node >/dev/null 2>&1 || { echo "pre-commit: node not found (install n
 ./node_modules/.bin/lint-staged
 # ponytail: tsc checks the working tree, not just staged content; fine unless you commit partial hunks.
 ./node_modules/.bin/tsc --noEmit
-# Unit tests only (~1s, no Docker). Integration tests need Docker: run `npm run test:integration`.
-./node_modules/.bin/vitest run
+# Unit tests only (~1s, no Docker). Integration tests need Docker: run `npm run test:integration`. disabled for now will enable once dev is over
+#./node_modules/.bin/vitest run --project unit

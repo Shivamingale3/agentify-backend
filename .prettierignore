@@ -1,9 +1,8 @@
-node_modules
-dist
-coverage
-migrations
-src/prisma
-*.log
 # Local research output (not committed)
+docs
 research_notes
 reports
+migrations
+src/database/prisma
+.claude
+.agents

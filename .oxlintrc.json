@@ -16,12 +16,14 @@
     "no-restricted-imports": [
       "error",
       { "patterns": [{ "regex": "^\\.{1,2}/", "message": "Use the @/ alias" }] }
-    ]
+    ],
+    "import/no-unassigned-import": ["error", { "allow": ["temporal-polyfill/**", "dotenv/config"] }]
   },
   "overrides": [
     {
       "files": ["**/*.spec.ts", "test/**"],
       "rules": { "no-console": "off", "typescript/explicit-function-return-type": "off" }
     }
-  ]
+  ],
+  "ignorePatterns": ["src/database/prisma/**", ".claude/skills/**", ".agents/**"]
 }
