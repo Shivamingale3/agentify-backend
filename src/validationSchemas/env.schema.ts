@@ -52,16 +52,6 @@ const envSchema = z.object({
   QUEUE_PASS: requiredString('QUEUE_PASS'),
   // Jobs each worker process runs in parallel. Spawn more processes to scale out.
   WORKER_CONCURRENCY: requiredNumber('WORKER_CONCURRENCY').default(5),
-  JWT_ACCESS_TOKEN_EXPIRY: z.coerce
-    .number({ error: 'JWT_ACCESS_TOKEN_EXPIRY must be a number' })
-    .int()
-    .positive()
-    .default(600),
-  JWT_REFRESH_TOKEN_EXPIRY: z.coerce
-    .number({ error: 'JWT_REFRESH_TOKEN_EXPIRY must be a number' })
-    .int()
-    .positive()
-    .default(86400),
   JWT_SECRET: requiredString('JWT_SECRET'),
   AUTH_COOKIE_NAME: z.string().default('c_auth_value'),
   REFRESH_COOKIE_NAME: z.string().default('c_refresh_value'),
