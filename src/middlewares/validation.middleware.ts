@@ -1,7 +1,6 @@
 import type { NextFunction, Request, Response } from 'express';
 import { ZodError, type z } from 'zod';
 import { HttpException } from '#exceptions/http.exception.js';
-import deviceHeadersSchema from '#validationSchemas/auth/deviceHeaders.schema.js';
 
 export const validationMiddleware = (
   schema: z.ZodType,
@@ -38,13 +37,11 @@ export const validationMiddleware = (
             configurable: true,
           });
           break;
-        default:
-          Object.defineProperty(req, 'headers', {
-            value: await deviceHeadersSchema.parseAsync(req.headers),
-            writable: true,
-            enumerable: true,
-            configurable: true,
-          });
+        default: {
+          // Compile-time guard: adding a new `source` without a case above becomes a type error.
+          const _exhaustive: never = source;
+          throw new Error(`Unhandled validation source: ${String(_exhaustive)}`);
+        }
       }
       next();
     } catch (error) {

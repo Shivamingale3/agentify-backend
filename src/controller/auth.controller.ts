@@ -20,6 +20,7 @@ class AuthController {
   public async login(request: Request, response: Response, next: NextFunction): Promise<void> {
     try {
       const payload = request.body as LoginDto;
+      // Safe cast: the /login route runs deviceHeadersSchema on req.headers (see auth.routes.ts).
       const headers = request.headers as ExtraDeviceHeaders;
       const tokens = await authService.login(payload, headers);
       cookieService.setAuthCookie(response, tokens.authToken);

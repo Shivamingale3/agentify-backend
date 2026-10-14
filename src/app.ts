@@ -10,8 +10,6 @@ import { env } from '#providers/env.provider.js';
 import { router } from '#routes/index.routes.js';
 import { morganStream } from '#utils/logger.js';
 import cookieParser from 'cookie-parser';
-import { validationMiddleware } from '#middlewares/validation.middleware.js';
-import deviceHeadersSchema from '#validationSchemas/auth/deviceHeaders.schema.js';
 
 export const app = express();
 
@@ -32,7 +30,6 @@ app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 
 app.use(morgan('dev', { stream: morganStream }));
-app.use(validationMiddleware(deviceHeadersSchema, 'headers'));
 app.use('/api', router);
 
 app.use(notFoundHandler);

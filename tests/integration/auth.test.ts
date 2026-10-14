@@ -195,6 +195,24 @@ describe('authService.verifyEmail edge cases', () => {
 });
 
 describe('POST /api/auth/login', () => {
+  // Regression: x-client-name had no length cap and was stored verbatim on the session.
+  it('stores an oversized device header as Unknown and still logs in', async () => {
+    await request(app).post('/api/auth/register').send(newUser).expect(200);
+    await db.public.User.where({ email: newUser.email }).update({ emailVerified: true });
+
+    await request(app)
+      .post('/api/auth/login')
+      .set('x-client-name', 'x'.repeat(5000))
+      .set('x-client-type', 'web')
+      .send({ email: newUser.email, password: newUser.password })
+      .expect(200);
+
+    expect(await db.public.Session.first()).toMatchObject({
+      clientName: 'Unknown',
+      clientType: 'web',
+    });
+  });
+
   // Regression: the raw refresh token was stored in sessions.token and the Redis session.
   it('stores only a SHA-256 hash of the refresh token', async () => {
     await request(app).post('/api/auth/register').send(newUser).expect(200);
