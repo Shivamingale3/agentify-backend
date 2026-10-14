@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { Queue } from 'bullmq';
 import { createClient } from 'redis';
 import request from 'supertest';
@@ -194,6 +195,28 @@ describe('authService.verifyEmail edge cases', () => {
 });
 
 describe('POST /api/auth/login', () => {
+  // Regression: the raw refresh token was stored in sessions.token and the Redis session.
+  it('stores only a SHA-256 hash of the refresh token', async () => {
+    await request(app).post('/api/auth/register').send(newUser).expect(200);
+    await db.public.User.where({ email: newUser.email }).update({ emailVerified: true });
+
+    const res = await request(app)
+      .post('/api/auth/login')
+      .send({ email: newUser.email, password: newUser.password })
+      .expect(200);
+    const cookies = ([] as string[]).concat(res.headers['set-cookie'] ?? []);
+    const refreshCookie = cookies.find((c) => c.startsWith(`${env.REFRESH_COOKIE_NAME}=`)) ?? '';
+    const refreshToken = refreshCookie.split(';')[0]?.split('=')[1] ?? '';
+    expect(refreshToken).not.toBe('');
+    const digest = createHash('sha256').update(refreshToken).digest('hex');
+
+    const session = await db.public.Session.first();
+    expect(session?.token).toBe(digest);
+    const cached = await redis.get(session?.id ?? '');
+    expect(cached).not.toContain(refreshToken);
+    expect(cached).toContain(digest);
+  });
+
   // Regression: unknown emails got "User not found" and unverified ones were revealed before the password check.
   it.each([
     ['an unknown email', { email: 'nobody@example.com', password: newUser.password }],
