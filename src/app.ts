@@ -2,14 +2,13 @@ import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
 import morgan from 'morgan';
-
+import cookieParser from 'cookie-parser';
 import { errorHandler } from '#middlewares/error.middleware.js';
 import { globalRateLimiter } from '#middlewares/rateLimiting.middleware.js';
 import { notFoundHandler } from '#middlewares/notFound.middleware.js';
 import { env } from '#providers/env.provider.js';
 import { router } from '#routes/index.routes.js';
 import { morganStream } from '#utils/logger.js';
-import cookieParser from 'cookie-parser';
 
 export const app = express();
 

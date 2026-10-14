@@ -12,13 +12,11 @@ class AuthController {
   public async register(request: Request, response: Response): Promise<void> {
     const payload = request.body as RegisterDto;
     await authService.register(payload);
-    // 201: a user resource was created.
     response.status(StatusCodes.CREATED).json(ApiResponse.success('Registered successfully', null));
   }
 
   public async login(request: Request, response: Response): Promise<void> {
     const payload = request.body as LoginDto;
-    // Safe cast: the /login route runs deviceHeadersSchema on req.headers (see auth.routes.ts).
     const headers = request.headers as ExtraDeviceHeaders;
     const tokens = await authService.login(payload, headers);
     cookieService.setAuthCookie(response, tokens.authToken);
@@ -34,6 +32,15 @@ class AuthController {
     await authService.clearSession(user.userId);
     cookieService.clearCookies(response);
     response.json(ApiResponse.success('Logged out successfully', null));
+  }
+
+  public async verifyEmail(request: Request, response: Response): Promise<void> {
+    const key = request.query['key'] as string;
+    if (!key) {
+      throw new HttpException(StatusCodes.BAD_REQUEST, 'Key is required');
+    }
+    await authService.verifyEmail(key);
+    response.json(ApiResponse.success('Email verified successfully', null));
   }
 }
 const authController = new AuthController();
