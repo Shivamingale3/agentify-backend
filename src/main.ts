@@ -1,6 +1,7 @@
 import { AppModule } from '@/app.module.js';
+import { AppLogger } from '@/common/logger/app.logger.js';
 import type { Env } from '@/config/env/env.schema.js';
-import { ConsoleLogger } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
@@ -13,7 +14,7 @@ async function bootstrap(): Promise<void> {
   const config = app.get(ConfigService<Env, true>);
   const appEnv = config.get('APP_ENV', { infer: true });
   app.useLogger(
-    new ConsoleLogger({
+    new AppLogger({
       json: appEnv === 'production',
       logLevels:
         appEnv === 'development' ? ['debug', 'log', 'warn', 'error'] : ['log', 'warn', 'error'],
@@ -29,5 +30,6 @@ async function bootstrap(): Promise<void> {
   app.setGlobalPrefix('api');
 
   await app.listen(config.get('APP_PORT', { infer: true }));
+  new Logger('Bootstrap').log(`Listening on ${config.get('APP_URL', { infer: true })}/api`);
 }
 await bootstrap();
