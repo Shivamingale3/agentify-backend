@@ -9,7 +9,7 @@
       "namespace": "public"
     },
     "temporary_tasks": {
-      "model": "TemporaryTasks",
+      "model": "Chore",
       "namespace": "public"
     },
     "users": {
@@ -21,7 +21,7 @@
     "namespaces": {
       "public": {
         "enum": {
-          "TemporaryTaskType": {
+          "ChoreType": {
             "codecId": "pg/text@1",
             "members": [
               {
@@ -32,6 +32,93 @@
           }
         },
         "models": {
+          "Chore": {
+            "fields": {
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "expiresAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "taskData": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/json@1",
+                  "kind": "scalar"
+                }
+              },
+              "taskType": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                },
+                "valueSet": {
+                  "entityKind": "enum",
+                  "entityName": "ChoreType",
+                  "namespaceId": "public",
+                  "plane": "domain"
+                }
+              },
+              "token": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "updatedAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {},
+            "storage": {
+              "fields": {
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "expiresAt": {
+                  "column": "expiresAt"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "taskData": {
+                  "column": "taskData"
+                },
+                "taskType": {
+                  "column": "taskType"
+                },
+                "token": {
+                  "column": "token"
+                },
+                "updatedAt": {
+                  "column": "updatedAt"
+                }
+              },
+              "namespaceId": "public",
+              "table": "temporary_tasks"
+            }
+          },
           "Session": {
             "fields": {
               "clientName": {
@@ -128,93 +215,6 @@
               },
               "namespaceId": "public",
               "table": "sessions"
-            }
-          },
-          "TemporaryTasks": {
-            "fields": {
-              "createdAt": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/timestamptz-temporal@1",
-                  "kind": "scalar"
-                }
-              },
-              "expiresAt": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/timestamptz-temporal@1",
-                  "kind": "scalar"
-                }
-              },
-              "id": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/text@1",
-                  "kind": "scalar"
-                }
-              },
-              "taskData": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/json@1",
-                  "kind": "scalar"
-                }
-              },
-              "taskType": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/text@1",
-                  "kind": "scalar"
-                },
-                "valueSet": {
-                  "entityKind": "enum",
-                  "entityName": "TemporaryTaskType",
-                  "namespaceId": "public",
-                  "plane": "domain"
-                }
-              },
-              "token": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/text@1",
-                  "kind": "scalar"
-                }
-              },
-              "updatedAt": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/timestamptz-temporal@1",
-                  "kind": "scalar"
-                }
-              }
-            },
-            "relations": {},
-            "storage": {
-              "fields": {
-                "createdAt": {
-                  "column": "createdAt"
-                },
-                "expiresAt": {
-                  "column": "expiresAt"
-                },
-                "id": {
-                  "column": "id"
-                },
-                "taskData": {
-                  "column": "taskData"
-                },
-                "taskType": {
-                  "column": "taskType"
-                },
-                "token": {
-                  "column": "token"
-                },
-                "updatedAt": {
-                  "column": "updatedAt"
-                }
-              },
-              "namespaceId": "public",
-              "table": "temporary_tasks"
             }
           },
           "User": {
@@ -459,7 +459,7 @@
                   "nullable": false,
                   "valueSet": {
                     "entityKind": "valueSet",
-                    "entityName": "TemporaryTaskType",
+                    "entityName": "ChoreType",
                     "namespaceId": "public",
                     "plane": "storage"
                   }
@@ -582,7 +582,7 @@
             }
           },
           "valueSet": {
-            "TemporaryTaskType": {
+            "ChoreType": {
               "kind": "valueSet",
               "values": [
                 "EMAIL_VERIFICATION"
@@ -594,7 +594,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "c0cc008e15d71b44987ddb7b3dfe46f80cf7c0d74e9fc16c28f3115c9ac0da1d"
+    "storageHash": "71ebfb9598133df36fe7e56b0b600b0f1a894a2f9c6d5219e5d22daaaa0791b2"
   },
   "execution": {
     "executionHash": "e3c825f737c791281249edc4e1a9883f93a3297a6a54a5536b003e90f53f4b1e",

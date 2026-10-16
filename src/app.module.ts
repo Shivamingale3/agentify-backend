@@ -6,7 +6,6 @@ import { ZodValidationPipe } from '@/common/pipes/zod-validation.pipe.js';
 import { validateEnv } from '@/config/env/env.validation.js';
 import { DatabaseModule } from '@/database/database.module.js';
 import { HealthModule } from '@/health/health.module.js';
-import { MailModule } from '@/mail/mail.module.js';
 import { Module, type MiddlewareConsumer, type NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
@@ -22,7 +21,7 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
     }),
     HealthModule,
     CacheModule,
-    MailModule,
+    // MailModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

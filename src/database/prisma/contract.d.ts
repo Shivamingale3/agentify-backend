@@ -18,7 +18,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'c0cc008e15d71b44987ddb7b3dfe46f80cf7c0d74e9fc16c28f3115c9ac0da1d'>;
+  StorageHashBase<'71ebfb9598133df36fe7e56b0b600b0f1a894a2f9c6d5219e5d22daaaa0791b2'>;
 export type ExecutionHash =
   ExecutionHashBase<'e3c825f737c791281249edc4e1a9883f93a3297a6a54a5536b003e90f53f4b1e'>;
 export type ProfileHash =
@@ -234,6 +234,15 @@ type DefaultLiteralValue<CodecId extends string, Encoded> = CodecId extends keyo
 
 export type FieldOutputTypes = {
   readonly public: {
+    readonly Chore: {
+      readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
+      readonly expiresAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
+      readonly id: CodecTypes['pg/text@1']['output'];
+      readonly taskData: CodecTypes['pg/json@1']['output'];
+      readonly taskType: 'EMAIL_VERIFICATION';
+      readonly token: CodecTypes['pg/text@1']['output'];
+      readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
+    };
     readonly Session: {
       readonly clientName: CodecTypes['pg/text@1']['output'] | null;
       readonly clientType: CodecTypes['pg/text@1']['output'] | null;
@@ -242,15 +251,6 @@ export type FieldOutputTypes = {
       readonly token: CodecTypes['pg/text@1']['output'];
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
       readonly userId: CodecTypes['pg/text@1']['output'];
-    };
-    readonly TemporaryTasks: {
-      readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
-      readonly expiresAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
-      readonly id: CodecTypes['pg/text@1']['output'];
-      readonly taskData: CodecTypes['pg/json@1']['output'];
-      readonly taskType: 'EMAIL_VERIFICATION';
-      readonly token: CodecTypes['pg/text@1']['output'];
-      readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
     };
     readonly User: {
       readonly countryCode: CodecTypes['pg/text@1']['output'] | null;
@@ -268,6 +268,15 @@ export type FieldOutputTypes = {
 };
 export type FieldInputTypes = {
   readonly public: {
+    readonly Chore: {
+      readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
+      readonly expiresAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
+      readonly id: CodecTypes['pg/text@1']['input'];
+      readonly taskData: CodecTypes['pg/json@1']['input'];
+      readonly taskType: 'EMAIL_VERIFICATION';
+      readonly token: CodecTypes['pg/text@1']['input'];
+      readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
+    };
     readonly Session: {
       readonly clientName: CodecTypes['pg/text@1']['input'] | null;
       readonly clientType: CodecTypes['pg/text@1']['input'] | null;
@@ -276,15 +285,6 @@ export type FieldInputTypes = {
       readonly token: CodecTypes['pg/text@1']['input'];
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
       readonly userId: CodecTypes['pg/text@1']['input'];
-    };
-    readonly TemporaryTasks: {
-      readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
-      readonly expiresAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
-      readonly id: CodecTypes['pg/text@1']['input'];
-      readonly taskData: CodecTypes['pg/json@1']['input'];
-      readonly taskType: 'EMAIL_VERIFICATION';
-      readonly token: CodecTypes['pg/text@1']['input'];
-      readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
     };
     readonly User: {
       readonly countryCode: CodecTypes['pg/text@1']['input'] | null;
@@ -370,6 +370,16 @@ export type StorageColumnInputTypes = {
 };
 
 export namespace Models {
+  export type public_Chore = {
+    createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
+    expiresAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
+    id: CodecTypes['pg/text@1']['output'];
+    taskData: CodecTypes['pg/json@1']['output'];
+    taskType: 'EMAIL_VERIFICATION';
+    token: CodecTypes['pg/text@1']['output'];
+    updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
+    readonly [RelationKeys]?: never;
+  };
   export type public_Session = {
     clientName: CodecTypes['pg/text@1']['output'] | null;
     clientType: CodecTypes['pg/text@1']['output'] | null;
@@ -380,16 +390,6 @@ export namespace Models {
     userId: CodecTypes['pg/text@1']['output'];
     user: public_User;
     readonly [RelationKeys]?: 'user';
-  };
-  export type public_TemporaryTasks = {
-    createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
-    expiresAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
-    id: CodecTypes['pg/text@1']['output'];
-    taskData: CodecTypes['pg/json@1']['output'];
-    taskType: 'EMAIL_VERIFICATION';
-    token: CodecTypes['pg/text@1']['output'];
-    updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
-    readonly [RelationKeys]?: never;
   };
   export type public_User = {
     countryCode: CodecTypes['pg/text@1']['output'] | null;
@@ -408,8 +408,8 @@ export namespace Models {
 
 export declare const models: {
   public: {
+    Chore: Models.public_Chore;
     Session: Models.public_Session;
-    TemporaryTasks: Models.public_TemporaryTasks;
     User: Models.public_User;
   };
 };
@@ -636,7 +636,7 @@ type ContractBase = Omit<
             };
           };
           readonly valueSet: {
-            readonly TemporaryTaskType: {
+            readonly ChoreType: {
               readonly kind: 'valueSet';
               readonly values: readonly ['EMAIL_VERIFICATION'];
             };
@@ -654,7 +654,7 @@ type ContractBase = Omit<
     readonly sessions: { readonly namespace: 'public' & NamespaceId; readonly model: 'Session' };
     readonly temporary_tasks: {
       readonly namespace: 'public' & NamespaceId;
-      readonly model: 'TemporaryTasks';
+      readonly model: 'Chore';
     };
     readonly users: { readonly namespace: 'public' & NamespaceId; readonly model: 'User' };
   };
@@ -662,6 +662,61 @@ type ContractBase = Omit<
     readonly namespaces: {
       readonly public: {
         readonly models: {
+          readonly Chore: {
+            readonly fields: {
+              readonly createdAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                };
+              };
+              readonly expiresAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                };
+              };
+              readonly id: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly taskData: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/json@1' };
+              };
+              readonly taskType: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly token: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly updatedAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                };
+              };
+            };
+            readonly relations: Record<string, never>;
+            readonly storage: {
+              readonly table: 'temporary_tasks';
+              readonly namespaceId: 'public';
+              readonly fields: {
+                readonly createdAt: { readonly column: 'createdAt' };
+                readonly expiresAt: { readonly column: 'expiresAt' };
+                readonly id: { readonly column: 'id' };
+                readonly taskData: { readonly column: 'taskData' };
+                readonly taskType: { readonly column: 'taskType' };
+                readonly token: { readonly column: 'token' };
+                readonly updatedAt: { readonly column: 'updatedAt' };
+              };
+            };
+          };
           readonly Session: {
             readonly fields: {
               readonly clientName: {
@@ -721,61 +776,6 @@ type ContractBase = Omit<
                 readonly token: { readonly column: 'token' };
                 readonly updatedAt: { readonly column: 'updatedAt' };
                 readonly userId: { readonly column: 'userId' };
-              };
-            };
-          };
-          readonly TemporaryTasks: {
-            readonly fields: {
-              readonly createdAt: {
-                readonly nullable: false;
-                readonly type: {
-                  readonly kind: 'scalar';
-                  readonly codecId: 'pg/timestamptz-temporal@1';
-                };
-              };
-              readonly expiresAt: {
-                readonly nullable: false;
-                readonly type: {
-                  readonly kind: 'scalar';
-                  readonly codecId: 'pg/timestamptz-temporal@1';
-                };
-              };
-              readonly id: {
-                readonly nullable: false;
-                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
-              };
-              readonly taskData: {
-                readonly nullable: false;
-                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/json@1' };
-              };
-              readonly taskType: {
-                readonly nullable: false;
-                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
-              };
-              readonly token: {
-                readonly nullable: false;
-                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
-              };
-              readonly updatedAt: {
-                readonly nullable: false;
-                readonly type: {
-                  readonly kind: 'scalar';
-                  readonly codecId: 'pg/timestamptz-temporal@1';
-                };
-              };
-            };
-            readonly relations: Record<string, never>;
-            readonly storage: {
-              readonly table: 'temporary_tasks';
-              readonly namespaceId: 'public';
-              readonly fields: {
-                readonly createdAt: { readonly column: 'createdAt' };
-                readonly expiresAt: { readonly column: 'expiresAt' };
-                readonly id: { readonly column: 'id' };
-                readonly taskData: { readonly column: 'taskData' };
-                readonly taskType: { readonly column: 'taskType' };
-                readonly token: { readonly column: 'token' };
-                readonly updatedAt: { readonly column: 'updatedAt' };
               };
             };
           };
@@ -848,7 +848,7 @@ type ContractBase = Omit<
           };
         };
         readonly enum: {
-          readonly TemporaryTaskType: {
+          readonly ChoreType: {
             readonly codecId: 'pg/text@1';
             readonly members: readonly [
               { readonly name: 'EMAIL_VERIFICATION'; readonly value: 'EMAIL_VERIFICATION' },
@@ -856,7 +856,7 @@ type ContractBase = Omit<
           };
         };
         readonly enumMemberTypes?: {
-          readonly TemporaryTaskType: readonly [
+          readonly ChoreType: readonly [
             { readonly name: 'EMAIL_VERIFICATION'; readonly value: 'EMAIL_VERIFICATION' },
           ];
         };

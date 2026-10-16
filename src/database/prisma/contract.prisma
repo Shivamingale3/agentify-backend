@@ -14,9 +14,9 @@ model User {
   @@map("users")
 }
 
-model TemporaryTasks {
+model Chore {
   id        String               @id @default(ulid())
-  taskType  TemporaryTaskType    @default(EMAIL_VERIFICATION)
+  taskType  ChoreType            @default(EMAIL_VERIFICATION)
   token     String               @unique
   taskData  Json
   createdAt DateTime             @default(now())
@@ -41,6 +41,6 @@ model Session {
   @@map("sessions")
 }
 
-enum TemporaryTaskType {
+enum ChoreType {
   EMAIL_VERIFICATION
 }
