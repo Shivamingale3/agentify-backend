@@ -23,7 +23,6 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
     HealthModule,
     CacheModule,
     QueueModule,
-    // MailModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

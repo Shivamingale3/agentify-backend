@@ -1,5 +1,6 @@
 import {
   isNetworkError,
+  isRedisError,
   isSqlConnectionError,
   isSqlQueryError,
 } from '@/common/utils/error-guards.js';
@@ -17,7 +18,7 @@ import type { Request, Response } from 'express';
 interface ResolvedError {
   status: number;
   message: string;
-  source: 'http' | 'database' | 'network' | 'unknown';
+  source: 'http' | 'database' | 'network' | 'redis' | 'unknown';
 }
 
 const UNAVAILABLE = 'Service temporarily unavailable, please try again';
@@ -77,6 +78,11 @@ function resolveError(exception: unknown): ResolvedError {
   // ─── Any other outbound connection (SMTP, external APIs, …) ───
   if (isNetworkError(exception)) {
     return { status: HttpStatus.SERVICE_UNAVAILABLE, message: UNAVAILABLE, source: 'network' };
+  }
+
+  // ─── Redis (queue) ───
+  if (isRedisError(exception)) {
+    return { status: HttpStatus.SERVICE_UNAVAILABLE, message: UNAVAILABLE, source: 'redis' };
   }
 
   return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: INTERNAL, source: 'unknown' };

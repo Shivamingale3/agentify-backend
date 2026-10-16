@@ -53,7 +53,7 @@ export const emailVerificationTemplate = (email: string, link: string): string =
         <!-- Footer -->
         <div style="padding-top: 20px; border-top: 1px solid #ddd; text-align: center; font-size: 12px; color: #777;">
             <p>&copy; ${new Date().getFullYear()} Agentify. All rights reserved.</p>
-            <p>If you have any questions, please contact our support team at [EMAIL_ADDRESS]</p>
+            <p>If you have any questions, please contact our support team at agentify@shivamingale.com</p>
         </div>
 
     </div>

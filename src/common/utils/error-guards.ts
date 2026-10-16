@@ -33,6 +33,22 @@ export function isUniqueViolation(error: unknown): boolean {
   return isSqlQueryError(error) && error.sqlState === PG_UNIQUE_VIOLATION;
 }
 
+// ─── Redis (ioredis, behind the queue) ─────────────────────────────
+
+// ioredis errors share no exported base class, but each sets a distinct `name`.
+// node-redis (the cache) is left out: CacheService turns its failures into cache misses.
+const IOREDIS_ERROR_NAMES = new Set([
+  'RedisError',
+  'ReplyError',
+  'ParserError',
+  'InterruptError',
+  'MaxRetriesPerRequestError',
+]);
+
+export function isRedisError(error: unknown): error is Error {
+  return error instanceof Error && IOREDIS_ERROR_NAMES.has(error.name);
+}
+
 // ─── Network ───────────────────────────────────────────────────────
 
 const NETWORK_ERROR_CODES = new Set([
