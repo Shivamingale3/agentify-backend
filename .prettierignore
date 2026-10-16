@@ -1,7 +1,3 @@
-# Local research output (not committed)
-docs
-research_notes
-reports
 migrations
 src/database/prisma
 .claude
