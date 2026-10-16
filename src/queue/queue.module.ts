@@ -22,6 +22,9 @@ import { ConfigService } from '@nestjs/config';
         },
         // A queue first used during a Redis outage would otherwise wait for 'ready' forever.
         skipWaitingForReady: true,
+        // Namespaces every key (`agentify:jobs:*`), so this app never shares jobs with another
+        // app on the same Redis.
+        prefix: 'agentify',
         defaultJobOptions: {
           attempts: 3,
           backoff: { type: 'exponential', delay: 1000 },

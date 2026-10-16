@@ -12,14 +12,7 @@ async function bootstrap(): Promise<void> {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, { bufferLogs: true });
   app.enableShutdownHooks();
   const config = app.get(ConfigService<Env, true>);
-  const appEnv = config.get('APP_ENV', { infer: true });
-  app.useLogger(
-    new AppLogger({
-      json: appEnv === 'production',
-      logLevels:
-        appEnv === 'development' ? ['debug', 'log', 'warn', 'error'] : ['log', 'warn', 'error'],
-    }),
-  );
+  app.useLogger(AppLogger.forEnv(config.get('APP_ENV', { infer: true })));
 
   // nginx (the frontend container) fronts this backend and sets X-Forwarded-*; trust exactly that one hop.
   app.set('trust proxy', 1);

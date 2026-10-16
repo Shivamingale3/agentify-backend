@@ -1,3 +1,4 @@
+import type { Env } from '@/config/env/env.schema.js';
 import { ConsoleLogger } from '@nestjs/common';
 
 // Nest's own boot chatter: one line per module and route on every start.
@@ -23,5 +24,14 @@ export class AppLogger extends ConsoleLogger {
 
   protected override getTimestamp(): string {
     return new Date().toLocaleTimeString('en-GB');
+  }
+
+  /** Text in development, JSON in production; debug logs only in development. */
+  static forEnv(appEnv: Env['APP_ENV']): AppLogger {
+    return new AppLogger({
+      json: appEnv === 'production',
+      logLevels:
+        appEnv === 'development' ? ['debug', 'log', 'warn', 'error'] : ['log', 'warn', 'error'],
+    });
   }
 }
