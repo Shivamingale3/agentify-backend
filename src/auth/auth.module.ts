@@ -1,3 +1,4 @@
+import { AuthController } from '@/auth/auth.controller.js';
 import { AuthService } from '@/auth/auth.service.js';
 import { CookieService } from '@/auth/cookie.service.js';
 import { SessionService } from '@/auth/session.service.js';
@@ -26,6 +27,7 @@ import { JwtModule } from '@nestjs/jwt';
     CacheModule,
     QueueModule,
   ],
+  controllers: [AuthController],
   providers: [SessionService, CookieService, AuthService],
 })
 export class AuthModule {}

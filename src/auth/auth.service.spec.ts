@@ -143,7 +143,7 @@ describe('AuthService.register', () => {
       60 * 60 * 1000,
     );
     const job = t.queue.enqueue.mock.calls[0]?.[0] as { data: { html: string } };
-    expect(job.data.html).toContain(`https://app.test/verify-email?token=${token}`);
+    expect(job.data.html).toContain(`https://app.test/verify-email?key=${token}`);
   });
 
   it('rethrows non-unique errors unchanged and sends nothing', async () => {

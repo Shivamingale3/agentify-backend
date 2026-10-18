@@ -183,7 +183,7 @@ export class AuthService {
 
   private async sendVerificationEmail(payload: EmailVerificationTask): Promise<void> {
     await this.cache.set(payload.token, payload, EMAIL_VERIFICATION_TTL_MS);
-    const link = `${this.config.get('FRONTEND_URL', { infer: true })}/verify-email?token=${payload.token}`;
+    const link = `${this.config.get('FRONTEND_URL', { infer: true })}/verify-email?key=${payload.token}`;
     await this.queue.enqueue({
       type: 'email',
       data: {

@@ -33,6 +33,11 @@ export class SessionService {
     });
   }
 
+  /** The user's current session: there is at most one, so a newer login has replaced older ones. */
+  async findByUserId(userId: string, orm: Orm = this.db.orm): Promise<Session | null> {
+    return await orm.public.Session.first({ userId });
+  }
+
   async deleteByUserId(userId: string, orm: Orm = this.db.orm): Promise<void> {
     // deleteAndCount(): one DELETE. delete() would first SELECT the id (2 round trips).
     await orm.public.Session.where({ userId }).deleteAndCount();
