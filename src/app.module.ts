@@ -1,5 +1,4 @@
 import { AuthModule } from '@/auth/auth.module.js';
-import { CacheModule } from '@/cache/cache.module.js';
 import { AllExceptionsFilter } from '@/common/filters/all-exceptions.filter.js';
 import { ResponseInterceptor } from '@/common/interceptors/response.interceptor.js';
 import { HttpLoggerMiddleware } from '@/common/middleware/http-logger.middleware.js';
@@ -7,7 +6,6 @@ import { ZodValidationPipe } from '@/common/pipes/zod-validation.pipe.js';
 import { validateEnv } from '@/config/env/env.validation.js';
 import { DatabaseModule } from '@/database/database.module.js';
 import { HealthModule } from '@/health/health.module.js';
-import { QueueModule } from '@/queue/queue.module.js';
 import { Module, type MiddlewareConsumer, type NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
@@ -22,8 +20,6 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
       errorMessage: 'Too many requests, please try again later.',
     }),
     HealthModule,
-    CacheModule,
-    QueueModule,
     AuthModule,
   ],
   providers: [
