@@ -15,7 +15,7 @@
   "files.insertFinalNewline": true,
 
   // TypeScript settings
-  // Auto-imports use the #* aliases from package.json "imports" (e.g. #utils/logger.js)
+  // Auto-imports use the @/ alias from tsconfig paths (e.g. @/auth/auth.service.js)
   "typescript.preferences.importModuleSpecifier": "non-relative",
   "typescript.preferences.importModuleSpecifierEnding": "js",
   "typescript.tsdk": "node_modules/typescript/lib",
@@ -45,6 +45,5 @@
   },
   "[markdown]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
-  },
-  "java.compile.nullAnalysis.mode": "automatic"
+  }
 }

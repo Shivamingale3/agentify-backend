@@ -1,11 +1,11 @@
 /**
  * Type guards that recognise errors thrown by the libraries behind our infrastructure modules.
- * Used by the global exception filter (and services that need a specific case, e.g. unique violation).
+ * Used by the global exception filter, and by services that need one case (unique violation).
  */
 
-// ─── Prisma (postgres driver) ──────────────────────────────────────
+// Prisma (postgres driver)
 
-/** Query failed in Postgres (constraint violation, bad input, …). `sqlState` is the Postgres SQLSTATE. */
+/** Query failed in Postgres (constraint violation, bad input, ...). */
 export interface SqlQueryError extends Error {
   kind: 'sql_query';
   sqlState: string | undefined;
@@ -17,7 +17,7 @@ export interface SqlConnectionError extends Error {
   kind: 'sql_connection';
 }
 
-export const PG_UNIQUE_VIOLATION = '23505';
+const PG_UNIQUE_VIOLATION = '23505';
 
 // Prisma 8 surfaces driver errors as SqlQueryError / SqlConnectionError (from an internal
 // package), so match on their `kind` discriminator instead of importing the classes.
@@ -33,7 +33,7 @@ export function isUniqueViolation(error: unknown): boolean {
   return isSqlQueryError(error) && error.sqlState === PG_UNIQUE_VIOLATION;
 }
 
-// ─── Redis (ioredis, behind the queue) ─────────────────────────────
+// Redis (ioredis, behind the queue)
 
 // ioredis errors share no exported base class, but each sets a distinct `name`.
 // node-redis (the cache) is left out: CacheService turns its failures into cache misses.
@@ -49,7 +49,7 @@ export function isRedisError(error: unknown): error is Error {
   return error instanceof Error && IOREDIS_ERROR_NAMES.has(error.name);
 }
 
-// ─── Network ───────────────────────────────────────────────────────
+// Network
 
 const NETWORK_ERROR_CODES = new Set([
   'ECONNREFUSED',
@@ -69,3 +69,7 @@ export function isNetworkError(error: unknown): error is NodeJS.ErrnoException {
     NETWORK_ERROR_CODES.has(error.code)
   );
 }
+
+/** The stack (or message) of anything thrown, for logging. */
+export const errorStack = (error: unknown): string =>
+  error instanceof Error ? (error.stack ?? error.message) : String(error);

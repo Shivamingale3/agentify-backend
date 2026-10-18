@@ -33,8 +33,8 @@ export const registerSchema = z.object({
     .regex(/^\d+$/, 'Mobile number must contain only digits')
     .nullable()
     .optional(),
-  // Policy: 8+ chars with an uppercase letter, lowercase letter, digit and symbol. Any non-alphanumeric
-  // character counts as a symbol (incl. space, '-', '.'), so password-manager output isn't rejected.
+  // Policy: 8+ chars with an uppercase and lowercase letter, a digit and a symbol. Any
+  // non-alphanumeric character counts as a symbol, so password-manager output isn't rejected.
   password: z
     .string({ error: 'Password is required' })
     .nonempty('Password is required')

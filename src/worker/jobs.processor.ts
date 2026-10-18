@@ -34,7 +34,7 @@ export class JobsProcessor extends WorkerHost implements OnApplicationBootstrap 
     await this.queue.schedule('cleanup-chores', ONE_HOUR_MS, { type: 'cleanupChores', data: {} });
   }
 
-  /** Job data comes from Redis (possibly enqueued by another deploy), so it is untrusted until parsed. */
+  /** Job data comes from Redis (maybe from another deploy), so it is untrusted until parsed. */
   async process(job: Job): Promise<void> {
     const id = job.id ?? '';
     const parsed = jobPayloadSchema.safeParse(job.data);

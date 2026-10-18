@@ -14,7 +14,7 @@ export interface ApiResponse<T> {
   data: T;
 }
 
-/** Wraps whatever a handler returns in `{ success, message, data }`; errors are shaped by AllExceptionsFilter. */
+/** Wraps what a handler returns in { success, message, data }. Errors: see AllExceptionsFilter. */
 @Injectable()
 export class ResponseInterceptor<T> implements NestInterceptor<T, ApiResponse<T | null>> {
   constructor(private readonly reflector: Reflector) {}

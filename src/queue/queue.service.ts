@@ -1,7 +1,7 @@
 import { JOBS_QUEUE, type JobPayload } from '@/queue/jobs.types.js';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Injectable, Logger, type OnModuleInit } from '@nestjs/common';
-import type { JobsOptions, Queue } from 'bullmq';
+import type { Queue } from 'bullmq';
 
 /** Producer side of the jobs queue: the API and the worker both enqueue through this. */
 @Injectable()
@@ -22,14 +22,13 @@ export class QueueService implements OnModuleInit {
     this.logger.log('Queue connected');
   }
 
-  /** Enqueue a job, e.g. `enqueue({ type: 'email', data: {...} })`. Returns the job id. */
-  async enqueue(payload: JobPayload, options?: JobsOptions): Promise<string> {
-    const job = await this.queue.add(payload.type, payload, options);
+  /** Enqueue a job, e.g. `enqueue({ type: 'email', data: {...} })`. */
+  async enqueue(payload: JobPayload): Promise<void> {
+    const job = await this.queue.add(payload.type, payload);
     this.logger.log(`Enqueued ${payload.type} job ${job.id ?? ''}`);
-    return job.id ?? '';
   }
 
-  /** Run a job every `everyMs`. Idempotent per `schedulerId`, so every worker can call it on boot. */
+  /** Run a job every `everyMs`. Idempotent per scheduler id, so each worker calls it on boot. */
   async schedule(schedulerId: string, everyMs: number, payload: JobPayload): Promise<void> {
     await this.queue.upsertJobScheduler(
       schedulerId,

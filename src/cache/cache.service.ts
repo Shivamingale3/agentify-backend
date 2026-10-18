@@ -1,3 +1,4 @@
+import { errorStack } from '@/common/utils/error-guards.js';
 import type { Env } from '@/config/env/env.schema.js';
 import { Injectable, Logger, type OnApplicationShutdown, type OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -35,7 +36,6 @@ export class CacheService implements OnModuleInit, OnApplicationShutdown {
   }
 
   async onApplicationShutdown(): Promise<void> {
-    // close() waits for pending commands; destroy() would reject them.
     await this.client.close();
     this.logger.log('Cache connection closed');
   }
@@ -53,7 +53,7 @@ export class CacheService implements OnModuleInit, OnApplicationShutdown {
       }
       return result.data;
     } catch (error) {
-      this.logger.error('Cache get failed', error instanceof Error ? error.stack : String(error));
+      this.logger.error('Cache get failed', errorStack(error));
       return null;
     }
   }
@@ -64,7 +64,7 @@ export class CacheService implements OnModuleInit, OnApplicationShutdown {
       const options = ttlMs ? { expiration: { type: 'PX', value: ttlMs } as const } : undefined;
       await this.client.set(key, JSON.stringify(value), options);
     } catch (error) {
-      this.logger.error('Cache set failed', error instanceof Error ? error.stack : String(error));
+      this.logger.error('Cache set failed', errorStack(error));
     }
   }
 
@@ -72,7 +72,7 @@ export class CacheService implements OnModuleInit, OnApplicationShutdown {
     try {
       await this.client.del(key);
     } catch (error) {
-      this.logger.error('Cache del failed', error instanceof Error ? error.stack : String(error));
+      this.logger.error('Cache del failed', errorStack(error));
     }
   }
 }

@@ -10,7 +10,7 @@ const requiredNumber = (name: string): z.ZodCoercedNumber =>
     .int(`${name} must be an integer`)
     .positive(`${name} is required`);
 
-const envSchema = z.object({
+export const envSchema = z.object({
   APP_PORT: requiredNumber('APP_PORT').default(5000),
   APP_ENV: z.enum(['development', 'test', 'production'], {
     error: 'APP_ENV is required and must be development, test or production',
@@ -59,6 +59,4 @@ const envSchema = z.object({
   AUTH_EXPIRY: requiredNumber('AUTH_EXPIRY').default(600),
 });
 
-type Env = z.infer<typeof envSchema>;
-
-export { envSchema, type Env };
+export type Env = z.infer<typeof envSchema>;

@@ -20,10 +20,10 @@ export const deviceHeadersSchema = z
 export type DeviceInfo = z.output<typeof deviceHeadersSchema>;
 
 /**
- * `@DeviceHeaders() device: DeviceInfo`: the validated device labels from the request headers.
- * A decorator because Nest never runs pipes on `@Headers()`; it can't fail (bad values become undefined).
+ * The validated device labels from the request headers. A decorator because Nest never runs pipes
+ * on @Headers(). It can't fail: bad values become undefined.
  */
 export const DeviceHeaders = createParamDecorator(
-  (_data: unknown, ctx: ExecutionContext): DeviceInfo =>
-    deviceHeadersSchema.parse(ctx.switchToHttp().getRequest<Request>().headers),
+  (_data: unknown, context: ExecutionContext): DeviceInfo =>
+    deviceHeadersSchema.parse(context.switchToHttp().getRequest<Request>().headers),
 );

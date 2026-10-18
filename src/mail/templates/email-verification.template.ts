@@ -23,12 +23,10 @@ export const emailVerificationTemplate = (email: string, link: string): string =
 <body>
     <div style="font-family: sans-serif; color: #333; line-height: 1.6; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
 
-        <!-- Header -->
         <div style="text-align: center; padding-bottom: 20px; border-bottom: 2px solid #007bff;">
             <h1 style="color: #007bff; margin: 0;">Agentify</h1>
         </div>
 
-        <!-- Content -->
         <div style="padding: 20px 0;">
             <h2 style="color: #333;">Verify Your Email Address</h2>
 
@@ -50,7 +48,6 @@ export const emailVerificationTemplate = (email: string, link: string): string =
             <p>If you did not create this account, please ignore this email.</p>
         </div>
 
-        <!-- Footer -->
         <div style="padding-top: 20px; border-top: 1px solid #ddd; text-align: center; font-size: 12px; color: #777;">
             <p>&copy; ${new Date().getFullYear()} Agentify. All rights reserved.</p>
             <p>If you have any questions, please contact our support team at agentify@shivamingale.com</p>

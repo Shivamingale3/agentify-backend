@@ -7,7 +7,6 @@ describe('deviceHeadersSchema', () => {
     ).toEqual({ clientName: 'Chrome', clientType: 'web' });
   });
 
-  // Regression: values had no bounds, so any size went into sessions and Redis.
   it.each([['x'.repeat(101)], [''], ['   ']])('drops %j instead of failing', (value) => {
     expect(deviceHeadersSchema.parse({ 'x-client-name': value }).clientName).toBeUndefined();
   });

@@ -16,9 +16,8 @@ import { z } from 'zod';
 const cachedSessionSchema = z.object({ id: z.string() });
 
 /**
- * `@UseGuards(JwtAuthGuard)`: only requests with a valid auth cookie for the user's *current*
- * session get through; sets `req.user`. A newer login or a logout revokes older tokens at once,
- * instead of leaving them usable until they expire.
+ * Lets through only requests whose auth cookie belongs to the user's current session, and sets
+ * req.user. A newer login or a logout revokes older tokens at once.
  */
 @Injectable()
 export class JwtAuthGuard implements CanActivate {

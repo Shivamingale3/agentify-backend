@@ -51,12 +51,14 @@ export class AuthService {
     // Intentional: the frontend pre-fills countryCode (India), so a countryCode with no mobile
     // isn't a real choice by the user. Store the phone only when both parts are sent; otherwise
     // drop both silently (no 400), so a default value never ends up as stored data.
-    const hasPhone = Boolean(dto.countryCode && dto.mobile);
+    const phone =
+      dto.countryCode && dto.mobile
+        ? { countryCode: dto.countryCode, mobile: dto.mobile }
+        : { countryCode: null, mobile: null };
     const data: CreateInput<Contract, 'User'> = {
       firstName: dto.firstName ?? null,
       lastName: dto.lastName ?? null,
-      countryCode: hasPhone ? (dto.countryCode ?? null) : null,
-      mobile: hasPhone ? (dto.mobile ?? null) : null,
+      ...phone,
       email: dto.email,
       emailVerified: false,
       password: await hash(dto.password, BCRYPT_COST),
@@ -78,19 +80,13 @@ export class AuthService {
   }
 
   async login(dto: LoginDto, device: DeviceInfo): Promise<AuthTokens> {
-    // Login is 2 statements and no transaction: SELECT user, then one atomic upsert of the session.
-    // bcrypt (~50-100 ms of CPU) must never run inside a transaction: it would hold a pooled
-    // connection idle (pool is 10), so a burst of logins could starve every other query.
+    // No transaction here: bcrypt is slow and would hold a pooled DB connection.
     const user = await this.users.findByEmail(dto.email);
-    // Always run bcrypt and return one message, so unknown emails can't be told apart by reply or timing.
+    // Always run bcrypt and give one answer, so unknown emails don't stand out by reply or timing.
     const passwordMatches = await compare(dto.password, user?.password ?? DUMMY_PASSWORD_HASH);
-    if (!user || !passwordMatches) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
+    if (!user || !passwordMatches) throw new UnauthorizedException('Invalid credentials');
     // Only revealed once the password is proven, so it can't be used to probe accounts.
-    if (!user.emailVerified) {
-      throw new UnauthorizedException('Email not verified');
-    }
+    if (!user.emailVerified) throw new UnauthorizedException('Email not verified');
     const { tokens, session } = await this.issueTokens(user, device);
     // Cache only after the session row is written (a Redis write can't be rolled back). Keyed by
     // user, so this overwrites the previous login's entry. TTL matches the refresh token.
@@ -106,9 +102,6 @@ export class AuthService {
 
   async verifyEmail(token: string): Promise<void> {
     const payload = await this.findVerification(token);
-    if (payload.token !== token) {
-      throw new UnauthorizedException('Invalid token');
-    }
     if (
       Temporal.Instant.compare(Temporal.Instant.from(payload.validTill), Temporal.Now.instant()) < 0
     ) {
@@ -183,7 +176,8 @@ export class AuthService {
 
   private async sendVerificationEmail(payload: EmailVerificationTask): Promise<void> {
     await this.cache.set(payload.token, payload, EMAIL_VERIFICATION_TTL_MS);
-    const link = `${this.config.get('FRONTEND_URL', { infer: true })}/verify-email?key=${payload.token}`;
+    const frontendUrl = this.config.get('FRONTEND_URL', { infer: true });
+    const link = `${frontendUrl}/verify-email?key=${payload.token}`;
     await this.queue.enqueue({
       type: 'email',
       data: {

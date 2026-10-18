@@ -3,7 +3,6 @@ import type { Env } from '@/config/env/env.schema.js';
 import type { ConfigService } from '@nestjs/config';
 import type { Request, Response } from 'express';
 
-// Lifetimes deliberately differ from the old hard-coded 10 min / 24 h.
 const env: Record<string, unknown> = {
   APP_ENV: 'production',
   AUTH_COOKIE_NAME: 'auth',
@@ -22,7 +21,6 @@ beforeEach(() => {
 });
 
 describe('CookieService', () => {
-  // Regression: maxAge was hard-coded and drifted from the JWT lifetimes in env.
   it('sets the auth cookie maxAge from AUTH_EXPIRY, httpOnly and strict', () => {
     service.setAuthCookie(response as unknown as Response, 'a');
     expect(response.cookie).toHaveBeenCalledWith('auth', 'a', {

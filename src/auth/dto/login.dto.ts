@@ -4,10 +4,10 @@ import { z } from 'zod';
 export const loginSchema = z.object({
   // Same normalization as registerSchema, or mixed-case input never matches the stored email.
   email: z
-    .string({ error: 'Email is invalid' })
+    .string({ error: 'Email is required' })
     .trim()
     .toLowerCase()
-    .pipe(z.email('Email is invalid')),
+    .pipe(z.email('Invalid email address')),
   // Login only compares against the stored hash. Strength rules belong in registerSchema, where a
   // password is created. Enforcing them here would tell anyone the policy ("must contain an
   // uppercase letter") and lock out existing users if the policy is ever tightened.

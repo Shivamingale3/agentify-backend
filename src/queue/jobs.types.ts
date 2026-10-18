@@ -10,11 +10,9 @@ export interface BuildJobData {
 
 /**
  * Every job on the jobs queue. `type` decides which handler runs it.
- * To add a job: add a member here, then a handler in the jobs processor (it fails to compile until you do).
+ * To add a job: add a member here, then a case in JobsProcessor (compile fails until you do).
  */
 export type JobPayload =
   | { type: 'email'; data: MailMessage }
   | { type: 'build'; data: BuildJobData }
   | { type: 'cleanupChores'; data: Record<string, never> };
-
-export type JobType = JobPayload['type'];

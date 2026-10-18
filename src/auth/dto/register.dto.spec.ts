@@ -53,7 +53,6 @@ describe('registerSchema', () => {
       expect(registerSchema.safeParse({ ...minimal, password }).success).toBe(true);
     });
 
-    // Regression: only !@#$%^&*()_+ counted as symbols and passwords were capped at 16 chars.
     it.each(['Passw0rd-', 'Passw0rd.', 'Pass w0rd', 'Aa1!aaaaaaaaaaaaa'])(
       'accepts %j',
       (password) => {

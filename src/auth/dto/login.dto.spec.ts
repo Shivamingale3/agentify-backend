@@ -16,7 +16,6 @@ describe('loginSchema', () => {
   });
 
   describe('password', () => {
-    // Regression: login enforced the register strength rules, leaking the policy.
     it.each(['abc', 'password', 'a'.repeat(128)])('accepts any non-empty password %j', (pw) => {
       expect(loginSchema.safeParse({ email: 'a@example.com', password: pw }).success).toBe(true);
     });

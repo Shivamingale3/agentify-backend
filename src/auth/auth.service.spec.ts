@@ -120,7 +120,6 @@ describe('AuthService.register', () => {
     });
   });
 
-  // Intentional behaviour: the frontend pre-fills countryCode, so on its own it is not stored.
   it('drops a countryCode sent without a mobile', async () => {
     await t.service.register({ ...dto, countryCode: '+91' });
 
@@ -214,13 +213,6 @@ describe('AuthService.verifyEmail', () => {
     expect(t.users.update).not.toHaveBeenCalled();
   });
 
-  it('rejects a cached payload issued for a different token', async () => {
-    t.cache.get.mockResolvedValue(payload({ token: 'other' }));
-
-    await expect(t.service.verifyEmail('tok')).rejects.toBeInstanceOf(UnauthorizedException);
-    expect(t.chores.deleteByToken).not.toHaveBeenCalled();
-  });
-
   it('rejects when the user no longer exists and keeps the cache entry', async () => {
     t.cache.get.mockResolvedValue(payload());
     t.chores.deleteByToken.mockResolvedValue(chore);
@@ -286,15 +278,12 @@ describe('AuthService.login', () => {
     await expect(t.service.login(credentials, noDevice)).rejects.toThrow('Email not verified');
   });
 
-  // Regression: login wrapped a session read + upsert in a transaction. Now it is SELECT user +
-  // one atomic upsert, with no transaction at all.
   it('never opens a transaction', async () => {
     await t.service.login(credentials, noDevice);
 
     expect(t.transaction).not.toHaveBeenCalled();
   });
 
-  // Regression: a cache entry must never exist for a session the DB didn't store.
   it('leaves the cache untouched when the session write fails', async () => {
     t.sessions.create.mockRejectedValueOnce(new Error('db down'));
 

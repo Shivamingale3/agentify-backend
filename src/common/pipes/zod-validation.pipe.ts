@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { z } from 'zod';
 
-/** Validates every @Body/@Query/@Param whose type is a createZodDto class; other params pass through untouched. */
+/** Validates every @Body/@Query/@Param typed with a createZodDto class; others pass through. */
 @Injectable()
 export class ZodValidationPipe implements PipeTransform {
   transform(value: unknown, { metatype }: ArgumentMetadata): unknown {

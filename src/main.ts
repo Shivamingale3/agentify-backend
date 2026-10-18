@@ -14,7 +14,7 @@ async function bootstrap(): Promise<void> {
   const config = app.get(ConfigService<Env, true>);
   app.useLogger(AppLogger.forEnv(config.get('APP_ENV', { infer: true })));
 
-  // nginx (the frontend container) fronts this backend and sets X-Forwarded-*; trust exactly that one hop.
+  // nginx (the frontend container) sets X-Forwarded-*: trust exactly that one hop.
   app.set('trust proxy', 1);
   app.use(helmet());
   // Only listed origins get CORS headers; cookies allowed for auth.

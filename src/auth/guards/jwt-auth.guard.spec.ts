@@ -50,7 +50,7 @@ describe('JwtAuthGuard', () => {
     await expect(guard.canActivate(context)).rejects.toBeInstanceOf(UnauthorizedException);
   });
 
-  it('rejects a token that fails verification (bad signature, expired, …)', async () => {
+  it('rejects a token that fails verification (bad signature, expired, ...)', async () => {
     const { guard, context } = setup({ verify: () => Promise.reject(new Error('jwt expired')) });
 
     await expect(guard.canActivate(context)).rejects.toThrow('Not authenticated');

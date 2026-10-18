@@ -1,4 +1,5 @@
 import {
+  errorStack,
   isNetworkError,
   isRedisError,
   isSqlConnectionError,
@@ -24,7 +25,8 @@ interface ResolvedError {
 const UNAVAILABLE = 'Service temporarily unavailable, please try again';
 const INTERNAL = 'Internal Server Error';
 
-/** Map a Postgres SQLSTATE to a client-safe response. https://www.postgresql.org/docs/current/errcodes-appendix.html */
+// Map a Postgres SQLSTATE to a client-safe response.
+// https://www.postgresql.org/docs/current/errcodes-appendix.html
 function resolveSqlState(sqlState: string | undefined): Omit<ResolvedError, 'source'> {
   switch (sqlState) {
     case '23505':
@@ -36,7 +38,7 @@ function resolveSqlState(sqlState: string | undefined): Omit<ResolvedError, 'sou
     case '23514':
       return { status: HttpStatus.BAD_REQUEST, message: 'Invalid value' };
   }
-  // 22xxx = data exception (value too long, invalid format, …)
+  // 22xxx = data exception (value too long, invalid format, ...)
   if (sqlState?.startsWith('22')) {
     return { status: HttpStatus.BAD_REQUEST, message: 'Invalid input' };
   }
@@ -47,7 +49,7 @@ function resolveSqlState(sqlState: string | undefined): Omit<ResolvedError, 'sou
   return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: INTERNAL };
 }
 
-/** Nest exceptions carry either a string or `{ message: string | string[] }`; take the first message. */
+// Nest exceptions carry a string or { message: string | string[] }; take the first message.
 function httpMessage(exception: HttpException): string {
   const body = exception.getResponse();
   if (typeof body === 'string') return body;
@@ -61,7 +63,7 @@ function resolveError(exception: unknown): ResolvedError {
     return { status: exception.getStatus(), message: httpMessage(exception), source: 'http' };
   }
 
-  // ─── Prisma ───
+  // Prisma
   if (isSqlQueryError(exception)) {
     return { ...resolveSqlState(exception.sqlState), source: 'database' };
   }
@@ -69,18 +71,18 @@ function resolveError(exception: unknown): ResolvedError {
     return { status: HttpStatus.SERVICE_UNAVAILABLE, message: UNAVAILABLE, source: 'database' };
   }
   if (isStructuredError(exception)) {
-    // DRIVER.* = connection problems; everything else (ORM.*, RUNTIME.*, CONTRACT.*) is a bug on our side.
+    // DRIVER.* = connection problems; anything else (ORM.*, RUNTIME.*, CONTRACT.*) is our bug.
     return exception.code.startsWith('DRIVER.')
       ? { status: HttpStatus.SERVICE_UNAVAILABLE, message: UNAVAILABLE, source: 'database' }
       : { status: HttpStatus.INTERNAL_SERVER_ERROR, message: INTERNAL, source: 'database' };
   }
 
-  // ─── Any other outbound connection (SMTP, external APIs, …) ───
+  // Any other outbound connection
   if (isNetworkError(exception)) {
     return { status: HttpStatus.SERVICE_UNAVAILABLE, message: UNAVAILABLE, source: 'network' };
   }
 
-  // ─── Redis (queue) ───
+  // Redis queue
   if (isRedisError(exception)) {
     return { status: HttpStatus.SERVICE_UNAVAILABLE, message: UNAVAILABLE, source: 'redis' };
   }
@@ -94,22 +96,19 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
   catch(exception: unknown, host: ArgumentsHost): void {
     const http = host.switchToHttp();
-    const req = http.getRequest<Request>();
-    const res = http.getResponse<Response>();
+    const request = http.getRequest<Request>();
+    const response = http.getResponse<Response>();
 
     const { status, message, source } = resolveError(exception);
-    const context = `[${source}] ${req.method} ${req.originalUrl} → ${status}`;
+    const context = `[${source}] ${request.method} ${request.originalUrl} -> ${status}`;
 
     // 5xx: our problem, log the full stack. 4xx: client problem, a one-liner is enough.
     if (status >= 500) {
-      this.logger.error(
-        context,
-        exception instanceof Error ? (exception.stack ?? exception.message) : String(exception),
-      );
+      this.logger.error(context, errorStack(exception));
     } else {
       this.logger.warn(`${context}: ${message}`);
     }
 
-    res.status(status).json({ success: false, message });
+    response.status(status).json({ success: false, message });
   }
 }

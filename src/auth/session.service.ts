@@ -13,11 +13,9 @@ export type CreateSessionInput = Pick<
 // SHA-256 (not bcrypt) is enough: the token is a long random JWT, not a guessable password.
 const hashToken = (token: string): string => createHash('sha256').update(token).digest('hex');
 
-// One session per user, so the cache is keyed by user: a new login overwrites the old entry, with no
-// need to read the previous session id first.
+// One session per user, so the cache is keyed by user: a new login overwrites the old entry.
 export const sessionCacheKey = (userId: string): string => `session:${userId}`;
 
-// Each method takes an optional `orm`: pass `tx.orm` to run it inside a transaction.
 @Injectable()
 export class SessionService {
   constructor(private readonly db: DatabaseService) {}
@@ -39,7 +37,6 @@ export class SessionService {
   }
 
   async deleteByUserId(userId: string, orm: Orm = this.db.orm): Promise<void> {
-    // deleteAndCount(): one DELETE. delete() would first SELECT the id (2 round trips).
     await orm.public.Session.where({ userId }).deleteAndCount();
   }
 }

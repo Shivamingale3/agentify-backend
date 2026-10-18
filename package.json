@@ -1,10 +1,10 @@
 {
-  "name": "backend-nest",
+  "name": "agentify-api",
   "version": "0.0.1",
-  "description": "",
-  "author": "",
-  "private": true,
-  "license": "UNLICENSED",
+  "description": "API Backend for the Agentify project. Previously in plain nodejs-typescript-prisma with some custom middlewares, now re-written in NestJs.",
+  "author": "Shivam Ingale (#Shivamingale3)",
+  "private": false,
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "build": "nest build",

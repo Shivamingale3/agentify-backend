@@ -2,7 +2,7 @@ import type { AuthTokenPayload } from '@/auth/token-payload.schema.js';
 import { createParamDecorator, type ExecutionContext } from '@nestjs/common';
 import type { Request } from 'express';
 
-/** `@CurrentUser() user: AuthTokenPayload`: the authenticated user. Only valid behind JwtAuthGuard. */
+/** The authenticated user. Only valid on routes behind JwtAuthGuard. */
 export const CurrentUser = createParamDecorator(
   (_data: unknown, context: ExecutionContext): AuthTokenPayload => {
     const { user } = context.switchToHttp().getRequest<Request>();

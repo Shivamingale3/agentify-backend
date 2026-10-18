@@ -33,7 +33,6 @@ describe('emailVerificationTemplate', () => {
     expect(html).toContain(`&copy; ${String(new Date().getFullYear())} Agentify`);
   });
 
-  // Regression: values were interpolated raw, allowing markup injection into the email.
   it('escapes the email and link so they cannot inject markup', () => {
     const injected = emailVerificationTemplate(
       "o'hara&<b>@example.com",

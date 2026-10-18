@@ -2,19 +2,19 @@ import { Injectable, Logger, type NestMiddleware } from '@nestjs/common';
 import type { NextFunction, Request, Response } from 'express';
 
 @Injectable()
-class HttpLoggerMiddleware implements NestMiddleware {
+export class HttpLoggerMiddleware implements NestMiddleware {
   private readonly logger = new Logger('HTTP');
 
-  use(req: Request, res: Response, next: NextFunction): void {
+  use(request: Request, response: Response, next: NextFunction): void {
     const start = Date.now();
 
-    res.on('finish', () => {
+    response.on('finish', () => {
       const duration = Date.now() - start;
-      this.logger.log(`${req.method} ${req.originalUrl} ${res.statusCode} ${duration}ms`);
+      this.logger.log(
+        `${request.method} ${request.originalUrl} ${response.statusCode} ${duration}ms`,
+      );
     });
 
     next();
   }
 }
-
-export { HttpLoggerMiddleware };
