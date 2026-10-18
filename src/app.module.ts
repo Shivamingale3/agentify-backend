@@ -1,3 +1,4 @@
+import { AuthModule } from '@/auth/auth.module.js';
 import { CacheModule } from '@/cache/cache.module.js';
 import { AllExceptionsFilter } from '@/common/filters/all-exceptions.filter.js';
 import { ResponseInterceptor } from '@/common/interceptors/response.interceptor.js';
@@ -23,6 +24,7 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
     HealthModule,
     CacheModule,
     QueueModule,
+    AuthModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
