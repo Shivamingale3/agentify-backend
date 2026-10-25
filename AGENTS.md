@@ -4,6 +4,10 @@ Node 24 (ESM, NodeNext) · TypeScript strict · NestJS 12 (Express 5 adapter) ·
 
 <!-- Canonical rules for every coding agent. CLAUDE.md imports this file; don't duplicate rules elsewhere. Keep under ~150 lines. -->
 
+## Most Important
+
+- Remember a task handed over is not the end goal, it is just a step to the whole end goal. The end goal is an API for the agentify application that includes the basic APIs like auth, agent CRUD, agent building, message passing, memory, tools, etc. The final API should be well documented and easy to use.
+
 ## Commands
 
 - **Definition of done:** `npm run check && npm test` passes. Paste the output; "should work" is not done.
