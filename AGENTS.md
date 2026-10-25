@@ -7,6 +7,7 @@ Node 24 (ESM, NodeNext) · TypeScript strict · NestJS 12 (Express 5 adapter) ·
 ## Most Important
 
 - Remember a task handed over is not the end goal, it is just a step to the whole end goal. The end goal is an API for the agentify application that includes the basic APIs like auth, agent CRUD, agent building, message passing, memory, tools, etc. The final API should be well documented and easy to use.
+- So whenever a task is given cross check it by putting it as a piece in the whole puzzle and if the piece doesn't fit rethink and prompt the user with suggested fix or some other alternative. Dont just blindly follow the task. Always suggest improvements, security and optimized approaches and best programming practices and patterns.
 
 ## Commands
 
