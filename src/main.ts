@@ -20,9 +20,9 @@ async function bootstrap(): Promise<void> {
   // Only listed origins get CORS headers; cookies allowed for auth.
   app.enableCors({ origin: config.get('ALLOWED_ORIGINS', { infer: true }), credentials: true });
   app.use(cookieParser());
-  app.setGlobalPrefix('api');
+  app.setGlobalPrefix('api/v1');
 
   await app.listen(config.get('APP_PORT', { infer: true }));
-  new Logger('Bootstrap').log(`Listening on ${config.get('APP_URL', { infer: true })}/api`);
+  new Logger('Bootstrap').log(`Listening on ${config.get('APP_URL', { infer: true })}/api/v1`);
 }
 await bootstrap();
