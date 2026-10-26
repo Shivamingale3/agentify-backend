@@ -4,6 +4,7 @@ import { CurrentUser } from '@/auth/decorators/current-user.decorator.js';
 import { DeviceHeaders, type DeviceInfo } from '@/auth/decorators/device-headers.decorator.js';
 import { LoginDto } from '@/auth/dto/login.dto.js';
 import { RegisterDto } from '@/auth/dto/register.dto.js';
+import type { ResendVerificationEmailDto } from '@/auth/dto/resend-verification-email.dto.js';
 import { VerifyEmailDto } from '@/auth/dto/verify-email.dto.js';
 import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard.js';
 import type { AuthTokenPayload } from '@/auth/token-payload.schema.js';
@@ -71,5 +72,13 @@ export class AuthController {
   @ResponseMessage('Email verified successfully')
   async verifyEmail(@Query() query: VerifyEmailDto): Promise<void> {
     await this.auth.verifyEmail(query.key);
+  }
+
+  @Post('resend-verification-email')
+  @HttpCode(HttpStatus.OK)
+  @Throttle(STRICT_LIMIT)
+  @ResponseMessage('Verification email sent successfully')
+  async resendVerificationEmail(@Body() dto: ResendVerificationEmailDto): Promise<void> {
+    await this.auth.resendVerificationEmail(dto.email);
   }
 }

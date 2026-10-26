@@ -16,7 +16,7 @@ import type { Contract, Models } from '@/database/prisma/contract.js';
 import { emailVerificationTemplate } from '@/mail/templates/email-verification.template.js';
 import { QueueService } from '@/queue/queue.service.js';
 import { UsersService } from '@/users/users.service.js';
-import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import type { CreateInput } from '@prisma/orm-postgres/orm-client';
@@ -36,6 +36,8 @@ export interface AuthTokens {
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly config: ConfigService<Env, true>,
     private readonly db: DatabaseService,
@@ -80,16 +82,11 @@ export class AuthService {
   }
 
   async login(dto: LoginDto, device: DeviceInfo): Promise<AuthTokens> {
-    // No transaction here: bcrypt is slow and would hold a pooled DB connection.
     const user = await this.users.findByEmail(dto.email);
-    // Always run bcrypt and give one answer, so unknown emails don't stand out by reply or timing.
     const passwordMatches = await compare(dto.password, user?.password ?? DUMMY_PASSWORD_HASH);
     if (!user || !passwordMatches) throw new UnauthorizedException('Invalid credentials');
-    // Only revealed once the password is proven, so it can't be used to probe accounts.
     if (!user.emailVerified) throw new UnauthorizedException('Email not verified');
     const { tokens, session } = await this.issueTokens(user, device);
-    // Cache only after the session row is written (a Redis write can't be rolled back). Keyed by
-    // user, so this overwrites the previous login's entry. TTL matches the refresh token.
     const ttlMs = this.config.get('REFRESH_EXPIRY', { infer: true }) * 1000;
     await this.cache.set(sessionCacheKey(user.id), session, ttlMs);
     return tokens;
@@ -187,5 +184,22 @@ export class AuthService {
         html: emailVerificationTemplate(payload.email, link),
       },
     });
+  }
+
+  async resendVerificationEmail(email: string): Promise<void> {
+    const verification = await this.db.client.transaction(
+      async (tx): Promise<EmailVerificationTask | null> => {
+        const user = await this.users.findByEmail(email, tx.orm);
+        if (!user) {
+          this.logger.log(`User not found for email: ${email}`);
+          return null;
+        }
+        return await this.createVerificationChore(user, tx.orm);
+      },
+    );
+    if (!verification) {
+      return;
+    }
+    await this.sendVerificationEmail(verification);
   }
 }
