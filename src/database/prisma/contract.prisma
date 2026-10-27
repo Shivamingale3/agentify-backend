@@ -11,6 +11,7 @@ model User {
   createdAt     DateTime?            @default(now())
   updatedAt     temporal.updatedAt()
 
+  @@index([email])
   @@map("users")
 }
 

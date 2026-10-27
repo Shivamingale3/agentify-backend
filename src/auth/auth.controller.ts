@@ -75,7 +75,7 @@ export class AuthController {
   }
 
   @Post('resend-verification-email')
-  @HttpCode(HttpStatus.OK)
+  @HttpCode(HttpStatus.ACCEPTED)
   @Throttle(STRICT_LIMIT)
   @ResponseMessage('Verification email sent successfully')
   async resendVerificationEmail(@Body() dto: ResendVerificationEmailDto): Promise<void> {

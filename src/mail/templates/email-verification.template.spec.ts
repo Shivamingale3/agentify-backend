@@ -25,7 +25,7 @@ describe('emailVerificationTemplate', () => {
   });
 
   it('greets the recipient and links to the verification URL', () => {
-    expect(html).toContain('<strong>a@example.com</strong>');
+    expect(html).toContain('<strong style="color: #0a0a0a;">a@example.com</strong>');
     expect(html).toContain('href="https://app.test/verify?token=abc"');
   });
 
@@ -38,7 +38,9 @@ describe('emailVerificationTemplate', () => {
       "o'hara&<b>@example.com",
       'https://app.test/verify?token=a"><script>x</script>&b=1',
     );
-    expect(injected).toContain('<strong>o&#39;hara&amp;&lt;b&gt;@example.com</strong>');
+    expect(injected).toContain(
+      '<strong style="color: #0a0a0a;">o&#39;hara&amp;&lt;b&gt;@example.com</strong>',
+    );
     expect(injected).toContain(
       'href="https://app.test/verify?token=a&quot;&gt;&lt;script&gt;x&lt;/script&gt;&amp;b=1"',
     );

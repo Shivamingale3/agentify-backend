@@ -16,7 +16,14 @@ import type { Contract, Models } from '@/database/prisma/contract.js';
 import { emailVerificationTemplate } from '@/mail/templates/email-verification.template.js';
 import { QueueService } from '@/queue/queue.service.js';
 import { UsersService } from '@/users/users.service.js';
-import { ConflictException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import {
+  ConflictException,
+  HttpException,
+  HttpStatus,
+  Injectable,
+  Logger,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import type { CreateInput } from '@prisma/orm-postgres/orm-client';
@@ -191,8 +198,11 @@ export class AuthService {
       async (tx): Promise<EmailVerificationTask | null> => {
         const user = await this.users.findByEmail(email, tx.orm);
         if (!user) {
-          this.logger.log(`User not found for email: ${email}`);
+          this.logger.log(`No account exists with this email: ${email}`);
           return null;
+        }
+        if (user.emailVerified) {
+          throw new HttpException(`Your email is already verified.`, HttpStatus.CONFLICT);
         }
         return await this.createVerificationChore(user, tx.orm);
       },
